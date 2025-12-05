@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.itemsIndexed
 import androidx.compose.material3.Button
 import androidx.compose.material3.DrawerValue
@@ -111,6 +112,9 @@ fun VideoListScreen(
                                             Toast.makeText(context, "이 폴더에는 비디오가 없습니다.", Toast.LENGTH_SHORT).show()
                                         }
                                     }
+                                },
+                                onDeleteFolder = {
+                                    videoViewModel.deleteFolder(it)
                                 }
                             )
                         }

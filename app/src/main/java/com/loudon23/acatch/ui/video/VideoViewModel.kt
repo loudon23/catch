@@ -180,6 +180,12 @@ class VideoViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    fun deleteFolder(folder: FolderItem) {
+        viewModelScope.launch {
+            repository.deleteFolder(folder)
+        }
+    }
+
     fun clearAllData() {
         viewModelScope.launch {
             repository.deleteAllFolders()
