@@ -52,8 +52,12 @@ dependencies {
     implementation(libs.androidx.compose.ui.graphics)
     implementation(libs.androidx.compose.ui.tooling.preview)
     implementation(libs.androidx.compose.material3)
+    implementation("androidx.compose.material:material-icons-extended")
     implementation("androidx.media3:media3-exoplayer:1.3.1")
     implementation("androidx.media3:media3-ui:1.3.1")
+
+    // Jetpack Compose Navigation 추가
+    implementation("androidx.navigation:navigation-compose:2.8.0-beta01")
 
     // Room
     implementation("androidx.room:room-runtime:2.6.1")

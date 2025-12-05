@@ -10,6 +10,10 @@ class VideoRepository(private val videoDao: VideoDao) {
         videoDao.insertVideos(videos)
     }
 
+    suspend fun deleteVideo(video: VideoItem) {
+        videoDao.delete(video)
+    }
+
     suspend fun deleteAllVideos() {
         videoDao.deleteAllVideos()
     }

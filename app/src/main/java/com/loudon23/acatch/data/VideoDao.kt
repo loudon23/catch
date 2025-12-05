@@ -1,6 +1,7 @@
 package com.loudon23.acatch.data
 
 import androidx.room.Dao
+import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
@@ -13,6 +14,9 @@ interface VideoDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertVideos(videos: List<VideoItem>)
+
+    @Delete
+    suspend fun delete(video: VideoItem)
 
     @Query("DELETE FROM videos")
     suspend fun deleteAllVideos()

@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <!-- Play/Pause buttons - ExoPlayer handles visibility -->
+    <ImageButton
+        android:id="@+id/exo_play"
+        android:layout_width="100dp"
+        android:layout_height="100dp"
+        android:layout_gravity="center"
+        android:background="@android:color/transparent"
+        android:src="@drawable/exo_icon_play"
+        android:scaleType="fitCenter"
+        android:tint="@android:color/white" />
+
+    <ImageButton
+        android:id="@+id/exo_pause"
+        android:layout_width="100dp"
+        android:layout_height="100dp"
+        android:layout_gravity="center"
+        android:background="@android:color/transparent"
+        android:src="@drawable/exo_icon_pause"
+        android:scaleType="fitCenter"
+        android:tint="@android:color/white" />
+
+    <!-- Progress bar -->
+    <androidx.media3.ui.DefaultTimeBar
+        android:id="@+id/exo_progress"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom"
+        android:layout_marginBottom="16dp"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="16dp"
+        app:buffered_color="#99FFFFFF"
+        app:played_color="@android:color/holo_blue_light"
+        app:unplayed_color="#4DFFFFFF" />
+
+</FrameLayout>
