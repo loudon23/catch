@@ -1,6 +1,8 @@
 package com.loudon23.acatch
 
+import android.net.Uri
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -9,8 +11,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.navigation.NavController
-import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -20,8 +20,6 @@ import com.loudon23.acatch.ui.theme.CatchTheme
 import com.loudon23.acatch.ui.video.VideoDetailScreen
 import com.loudon23.acatch.ui.video.VideoListScreen
 import com.loudon23.acatch.ui.video.VideoViewModel
-import android.net.Uri // Uri import
-import android.util.Log // Log import 추가
 
 // 내비게이션 경로 정의
 object NavRoutes {
@@ -56,6 +54,7 @@ class MainActivity : ComponentActivity() {
                                     Log.d("MainActivity", "Attempting to navigate to detail for URI: $videoUri, index: $videoIndex")
                                     val encodedUri = Uri.encode(videoUri)
                                     // videoIndex를 쿼리 파라미터로 전달
+                                    Log.d("MainActivity", "${NavRoutes.VIDEO_DETAIL}/$encodedUri?${NavRoutes.VIDEO_INDEX_KEY}=$videoIndex")
                                     navController.navigate("${NavRoutes.VIDEO_DETAIL}/$encodedUri?${NavRoutes.VIDEO_INDEX_KEY}=$videoIndex")
                                 }
                             )
@@ -81,7 +80,6 @@ class MainActivity : ComponentActivity() {
                                 onNavigateBack = {
                                     navController.popBackStack()
                                 }
-                                // onNavigateToNextVideo 콜백은 VerticalPager가 처리하므로 더 이상 필요 없습니다. 이전에 제거되었습니다.
                             )
                         }
                     }

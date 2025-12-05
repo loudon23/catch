@@ -2,9 +2,10 @@ package com.loudon23.acatch.data
 
 import kotlinx.coroutines.flow.Flow
 
-class VideoRepository(private val videoDao: VideoDao) {
+class VideoRepository(private val videoDao: VideoDao, private val folderDao: FolderDao) {
 
     val allVideos: Flow<List<VideoItem>> = videoDao.getVideos()
+    val allFolders: Flow<List<FolderItem>> = folderDao.getFolders()
 
     suspend fun insertVideos(videos: List<VideoItem>) {
         videoDao.insertVideos(videos)
@@ -16,5 +17,13 @@ class VideoRepository(private val videoDao: VideoDao) {
 
     suspend fun deleteAllVideos() {
         videoDao.deleteAllVideos()
+    }
+
+    suspend fun insertFolder(folder: FolderItem) {
+        folderDao.insertFolder(folder)
+    }
+
+    suspend fun deleteAllFolders() {
+        folderDao.deleteAllFolders()
     }
 }
