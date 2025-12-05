@@ -21,6 +21,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -37,6 +38,9 @@ class VideoViewModel(application: Application) : AndroidViewModel(application) {
 
     private val _currentFolderUri: MutableStateFlow<Uri?> = MutableStateFlow(null)
     val currentFolderUri: StateFlow<Uri?> = _currentFolderUri
+
+    private val _isLoading = MutableStateFlow(true)
+    val isLoading: StateFlow<Boolean> = _isLoading
 
     val player: ExoPlayer
 
@@ -59,6 +63,11 @@ class VideoViewModel(application: Application) : AndroidViewModel(application) {
             started = SharingStarted.WhileSubscribed(5_000),
             initialValue = emptyList()
         )
+
+        viewModelScope.launch {
+            folderListState.first()
+            _isLoading.value = false
+        }
 
         viewModelScope.launch {
             videoListState.collectLatest { videos ->
