@@ -36,6 +36,7 @@ import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberPermissionState
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
+import androidx.core.net.toUri
 
 @OptIn(ExperimentalPermissionsApi::class)
 @Composable
@@ -120,7 +121,7 @@ fun VideoListScreen(
                                     videoViewModel.deleteFolder(it)
                                 },
                                 onOpenFolder = { 
-                                    val folderUri = Uri.parse(it.uri)
+                                    val folderUri = it.uri.toUri()
                                     val documentUri = DocumentsContract.buildDocumentUriUsingTree(folderUri, DocumentsContract.getTreeDocumentId(folderUri))
 
                                     val intent = Intent(Intent.ACTION_VIEW).apply {

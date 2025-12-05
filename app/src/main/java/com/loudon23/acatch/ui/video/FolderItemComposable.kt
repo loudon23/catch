@@ -36,6 +36,7 @@ import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import com.loudon23.acatch.data.FolderItem
+import androidx.core.net.toUri
 
 @Composable
 fun FolderItemComposable(
@@ -59,7 +60,7 @@ fun FolderItemComposable(
             .pointerInput(folder) { // Pass folder to restart gesture detection on change
                 detectTapGestures(
                     onTap = { 
-                        onFolderClick(Uri.parse(folder.uri))
+                        onFolderClick(folder.uri.toUri())
                     },
                     onLongPress = { offset ->
                         view.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
