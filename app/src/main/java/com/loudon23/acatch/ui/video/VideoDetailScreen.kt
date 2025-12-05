@@ -27,6 +27,7 @@ import kotlinx.coroutines.launch
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun VideoDetailScreen(
+    folderUri: String,
     videoUri: String?, // 시작 동영상의 URI (초기 페이지를 찾기 위함)
     videoIndex: Int?, // 시작 동영상의 인덱스 (VerticalPager의 initialPage)
     videoViewModel: VideoViewModel = viewModel(),
@@ -36,7 +37,10 @@ fun VideoDetailScreen(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
 
-    val videoItems by videoViewModel.videoListState.collectAsState()
+    val allVideoItems by videoViewModel.videoListState.collectAsState()
+    val videoItems = remember(allVideoItems, folderUri) {
+        allVideoItems.filter { it.folderUri == folderUri }
+    }
     val thumbnails by videoViewModel.thumbnails.collectAsState()
 
     // 초기 페이지 인덱스를 찾습니다.

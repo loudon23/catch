@@ -103,7 +103,7 @@ fun VideoItemSkeleton(modifier: Modifier = Modifier) {
 @Composable
 fun VideoListScreen(
     videoViewModel: VideoViewModel = viewModel(),
-    onNavigateToDetail: (String, Int) -> Unit // 상세 화면으로 이동하기 위한 콜백 시그니처 변경 (String, Int)
+    onNavigateToDetail: (String, String, Int) -> Unit // 상세 화면으로 이동하기 위한 콜백 시그니처 변경 (String, String, Int)
 ) {
     val permission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
         Manifest.permission.READ_MEDIA_VIDEO
@@ -165,7 +165,7 @@ fun VideoListScreen(
                                     scope.launch {
                                         val videosInFolder = videoViewModel.getVideosForFolder(it).firstOrNull()
                                         if (!videosInFolder.isNullOrEmpty()) {
-                                            onNavigateToDetail(videosInFolder.first().uri, 0)
+                                            onNavigateToDetail(folderItem.uri, videosInFolder.first().uri, 0)
                                         } else {
                                             Toast.makeText(context, "이 폴더에는 비디오가 없습니다.", Toast.LENGTH_SHORT).show()
                                         }
