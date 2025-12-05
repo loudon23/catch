@@ -9,6 +9,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavType
@@ -20,6 +21,8 @@ import com.loudon23.acatch.ui.theme.CatchTheme
 import com.loudon23.acatch.ui.video.VideoDetailScreen
 import com.loudon23.acatch.ui.video.VideoListScreen
 import com.loudon23.acatch.ui.video.VideoViewModel
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 
 // 내비게이션 경로 정의
 object NavRoutes {
@@ -80,7 +83,7 @@ class MainActivity : ComponentActivity() {
                                 videoViewModel = videoViewModel,
                                 onDeleteVideo = { videoItem ->
                                     videoViewModel.deleteVideo(videoItem)
-                                    navController.popBackStack()
+                                    // No need to popBackStack here as pager will handle it
                                 },
                                 onNavigateBack = {
                                     navController.popBackStack()
