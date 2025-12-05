@@ -26,6 +26,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import androidx.core.net.toUri
 
 class VideoViewModel(application: Application) : AndroidViewModel(application) {
 
@@ -37,7 +38,6 @@ class VideoViewModel(application: Application) : AndroidViewModel(application) {
     val folderListState: StateFlow<List<FolderItem>>
 
     private val _currentFolderUri: MutableStateFlow<Uri?> = MutableStateFlow(null)
-    val currentFolderUri: StateFlow<Uri?> = _currentFolderUri
 
     private val _isLoading = MutableStateFlow(true)
     val isLoading: StateFlow<Boolean> = _isLoading
@@ -140,7 +140,7 @@ class VideoViewModel(application: Application) : AndroidViewModel(application) {
     fun refreshFolder(folder: FolderItem) {
         viewModelScope.launch {
             repository.deleteVideosByFolderUri(folder.uri)
-            scanVideosFromUri(Uri.parse(folder.uri))
+            scanVideosFromUri(folder.uri.toUri())
         }
     }
 
@@ -168,13 +168,13 @@ class VideoViewModel(application: Application) : AndroidViewModel(application) {
         }
         val newThumbnails = mutableMapOf<String, Bitmap>()
         for (videoItem in videoList) {
-            val uri = Uri.parse(videoItem.uri)
+            val uri = videoItem.uri.toUri()
             val bitmap = ThumbnailExtractor.extractThumbnail(getApplication(), uri)
             if (bitmap != null) {
                 newThumbnails[videoItem.uri] = bitmap
             }
         }
-        _thumbnails.value = _thumbnails.value + newThumbnails
+        _thumbnails.value += newThumbnails
     }
 
     fun deleteVideo(videoItem: VideoItem) {
@@ -200,11 +200,6 @@ class VideoViewModel(application: Application) : AndroidViewModel(application) {
             _thumbnails.value = emptyMap()
             stopPlayback()
         }
-    }
-
-    fun selectFolder(uri: Uri?) {
-        _currentFolderUri.value = uri
-        stopPlayback()
     }
 
     fun getVideosForFolder(folderUri: Uri): Flow<List<VideoItem>> {
