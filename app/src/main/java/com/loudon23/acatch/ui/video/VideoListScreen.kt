@@ -3,7 +3,6 @@ package com.loudon23.acatch.ui.video
 import android.Manifest
 import android.content.ActivityNotFoundException
 import android.content.Intent
-import android.net.Uri
 import android.os.Build
 import android.provider.DocumentsContract
 import android.widget.Toast
@@ -30,13 +29,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.core.net.toUri
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberPermissionState
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
-import androidx.core.net.toUri
 
 @OptIn(ExperimentalPermissionsApi::class)
 @Composable
@@ -100,7 +99,7 @@ fun VideoListScreen(
                             }
                         }
                     } else {
-                        itemsIndexed(folderItems, key = { _, folderItem -> folderItem.uri }) { index, folderItem ->
+                        itemsIndexed(folderItems, key = { _, folderItem -> folderItem.uri }) { _, folderItem ->
                             val folderThumbnailBitmap = folderItem.thumbnailVideoUri?.let { uri ->
                                 thumbnails[uri]
                             }
@@ -132,7 +131,7 @@ fun VideoListScreen(
                                     }
                                     try {
                                         context.startActivity(intent)
-                                    } catch (e: ActivityNotFoundException) {
+                                    } catch (_: ActivityNotFoundException) {
                                         Toast.makeText(context, "폴더를 열 수 있는 앱을 찾을 수 없습니다.", Toast.LENGTH_SHORT).show()
                                     }
                                 },
