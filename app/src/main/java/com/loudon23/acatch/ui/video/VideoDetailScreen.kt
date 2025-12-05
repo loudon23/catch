@@ -1,6 +1,5 @@
 package com.loudon23.acatch.ui.video
 
-import android.util.Log
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -9,6 +8,7 @@ import androidx.compose.foundation.pager.VerticalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -18,7 +18,6 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.loudon23.acatch.data.VideoItem
 import kotlinx.coroutines.flow.collectLatest
@@ -28,13 +27,12 @@ import kotlinx.coroutines.launch
 @Composable
 fun VideoDetailScreen(
     folderUri: String,
-    videoUri: String?, // 시작 동영상의 URI (초기 페이지를 찾기 위함)
-    videoIndex: Int?, // 시작 동영상의 인덱스 (VerticalPager의 initialPage)
+    videoUri: String?,
+    videoIndex: Int?,
     videoViewModel: VideoViewModel = viewModel(),
     onDeleteVideo: (VideoItem) -> Unit,
     onNavigateBack: () -> Unit
 ) {
-    val context = LocalContext.current
     val scope = rememberCoroutineScope()
 
     val allVideoItems by videoViewModel.videoListState.collectAsState()
@@ -43,12 +41,9 @@ fun VideoDetailScreen(
     }
     val thumbnails by videoViewModel.thumbnails.collectAsState()
 
-    // 초기 페이지 인덱스를 찾습니다.
     val initialPage = remember(videoUri, videoIndex, videoItems) {
-        Log.d("VideoDetailScreen", "videoUri: $videoUri, videoIndex: $videoIndex")
         val indexFromUri = videoItems.indexOfFirst { it.uri == videoUri }
-        Log.d("VideoDetailScreen", "indexFromUri: $indexFromUri")
-        (videoIndex ?: indexFromUri).coerceIn(0, (videoItems.size - 1).coerceAtLeast(0))
+        (videoIndex ?: if (indexFromUri != -1) indexFromUri else 0).coerceIn(0, (videoItems.size - 1).coerceAtLeast(0))
     }
 
     val pagerState = rememberPagerState(
@@ -56,10 +51,22 @@ fun VideoDetailScreen(
         pageCount = { videoItems.size }
     )
 
-    // 페이지 변경 시 현재 재생 중인 비디오 인덱스를 ViewModel에 전달
-    LaunchedEffect(pagerState, videoItems.size) {
-        snapshotFlow { pagerState.currentPage }.collectLatest { page ->
-            videoViewModel.updateCurrentlyPlayingIndex(page)
+    // When the page changes, play the video for the new page.
+    LaunchedEffect(pagerState, videoItems) {
+        snapshotFlow { pagerState.settledPage }.collectLatest { page ->
+            val item = videoItems.getOrNull(page)
+            if (item != null) {
+                videoViewModel.playVideo(item.uri)
+            } else {
+                videoViewModel.stopPlayback()
+            }
+        }
+    }
+
+    // Stop playback when the screen is disposed.
+    DisposableEffect(Unit) {
+        onDispose {
+            videoViewModel.stopPlayback()
         }
     }
 
@@ -75,18 +82,14 @@ fun VideoDetailScreen(
             VerticalPager(
                 state = pagerState,
                 modifier = Modifier.fillMaxSize()
-            ) {
-                page ->
-                Log.d("VideoDetailScreen", "videoItems: $videoItems")
-                Log.d("VideoDetailScreen", "Rendering page: $page")
+            ) { page ->
                 val videoItem = videoItems.getOrNull(page)
                 if (videoItem != null) {
                     val thumbnailBitmap = thumbnails[videoItem.uri]
                     VideoPagerItem(
                         video = videoItem,
                         thumbnailBitmap = thumbnailBitmap,
-                        isPlaying = pagerState.currentPage == page,
-                        videoViewModel = videoViewModel,
+                        player = videoViewModel.player, // Pass the single player instance
                         onDeleteVideo = { itemToDelete ->
                             onDeleteVideo(itemToDelete)
                             if (videoItems.size == 1) {
