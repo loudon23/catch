@@ -229,20 +229,5 @@ fun VideoPagerItem(
                 color = Color.White
             )
         }
-
-        DropdownMenu(
-            expanded = showContextMenu,
-            onDismissRequest = { showContextMenu = false },
-            offset = pressOffset
-        ) {
-            DropdownMenuItem(
-                text = { Text("Delete") },
-                onClick = {
-                    onDeleteVideo(video)
-                    scope.launch { onNavigateBack() } // 삭제 후 뒤로 가기
-                    showContextMenu = false
-                }
-            )
-        }
     }
 }

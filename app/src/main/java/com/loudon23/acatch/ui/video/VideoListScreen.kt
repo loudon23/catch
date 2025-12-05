@@ -217,15 +217,6 @@ fun VideoThumbnailItem(
     var showContextMenu by remember { androidx.compose.runtime.mutableStateOf(false) }
     var pressOffset by remember { androidx.compose.runtime.mutableStateOf(DpOffset.Zero) }
 
-    // VideoThumbnailItem이 구성될 때 썸네일 상태 로깅
-    // LaunchedEffect(video.uri, thumbnailBitmap) { // 로그 제거
-    //     if (thumbnailBitmap != null) { // 로그 제거
-    //         Log.d("VideoThumbnailItem", "Thumbnail loaded for URI: ${video.uri}") // 로그 제거
-    //     } else { // 로그 제거
-    //         Log.d("VideoThumbnailItem", "Thumbnail NOT loaded for URI: ${video.uri}") // 로그 제거
-    //     } // 로그 제거
-    // } // 로그 제거
-
     Box(
         modifier = Modifier
             .aspectRatio(9f / 16f)
