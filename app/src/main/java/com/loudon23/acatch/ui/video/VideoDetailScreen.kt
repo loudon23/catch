@@ -50,7 +50,7 @@ fun VideoDetailScreen(
         folderItems.indexOfFirst { it.uri == folderUri }.coerceAtLeast(0)
     }
 
-    val horizontalPagerState = rememberPagerState(
+    val verticalPagerState = rememberPagerState(
         initialPage = initialFolderIndex,
         pageCount = { folderItems.size }
     )
@@ -62,8 +62,8 @@ fun VideoDetailScreen(
         }
     }
 
-    HorizontalPager(
-        state = horizontalPagerState,
+    VerticalPager(
+        state = verticalPagerState,
         modifier = Modifier
             .fillMaxSize()
             .background(Color.Black)
@@ -81,7 +81,7 @@ fun VideoDetailScreen(
             videoViewModel = videoViewModel,
             onDeleteVideo = onDeleteVideo,
             onNavigateBack = onNavigateBack,
-            isCurrentFolderPage = horizontalPagerState.currentPage == folderIndex && !horizontalPagerState.isScrollInProgress
+            isCurrentFolderPage = verticalPagerState.currentPage == folderIndex && !verticalPagerState.isScrollInProgress
         )
     }
 }
@@ -117,22 +117,22 @@ private fun FolderVideoPager(
         (initialVideoIndex ?: if (indexFromUri != -1) indexFromUri else 0).coerceIn(0, (videoItems.size - 1).coerceAtLeast(0))
     }
 
-    val verticalPagerState = rememberPagerState(
+    val horizontalPagerState = rememberPagerState(
         initialPage = initialPage,
         pageCount = { videoItems.size }
     )
 
-    // When the vertical page changes, play the video, but only if it's the active folder.
-    LaunchedEffect(verticalPagerState.settledPage, isCurrentFolderPage) {
+    // When the horizontal page changes, play the video, but only if it's the active folder.
+    LaunchedEffect(horizontalPagerState.settledPage, isCurrentFolderPage) {
         if (isCurrentFolderPage) {
-            videoItems.getOrNull(verticalPagerState.settledPage)?.let {
+            videoItems.getOrNull(horizontalPagerState.settledPage)?.let {
                 videoViewModel.playVideo(it.uri)
             }
         }
     }
 
-    VerticalPager(
-        state = verticalPagerState,
+    HorizontalPager(
+        state = horizontalPagerState,
         modifier = Modifier.fillMaxSize()
     ) { page ->
         val videoItem = videoItems.getOrNull(page)
@@ -148,8 +148,8 @@ private fun FolderVideoPager(
                         onNavigateBack() 
                     } else if (page >= videoItems.size - 1 && videoItems.isNotEmpty()) {
                         scope.launch {
-                            val newPage = (verticalPagerState.currentPage - 1).coerceAtLeast(0)
-                            verticalPagerState.animateScrollToPage(newPage)
+                            val newPage = (horizontalPagerState.currentPage - 1).coerceAtLeast(0)
+                            horizontalPagerState.animateScrollToPage(newPage)
                         }
                     }
                 },
