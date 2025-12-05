@@ -18,6 +18,9 @@ interface VideoDao {
     @Delete
     suspend fun delete(video: VideoItem)
 
+    @Query("DELETE FROM videos WHERE folderUri = :folderUri")
+    suspend fun deleteVideosByFolderUri(folderUri: String)
+
     @Query("DELETE FROM videos")
     suspend fun deleteAllVideos()
 }

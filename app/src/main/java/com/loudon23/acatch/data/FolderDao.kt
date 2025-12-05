@@ -1,6 +1,7 @@
 package com.loudon23.acatch.data
 
 import androidx.room.Dao
+import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
@@ -13,6 +14,9 @@ interface FolderDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertFolder(folder: FolderItem)
+
+    @Delete
+    suspend fun deleteFolder(folder: FolderItem)
 
     @Query("DELETE FROM folders")
     suspend fun deleteAllFolders()

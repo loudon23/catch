@@ -13,6 +13,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Folder
+import androidx.compose.material.icons.outlined.Delete
+import androidx.compose.material.icons.outlined.FolderOpen
+import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
@@ -28,7 +31,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import com.loudon23.acatch.data.FolderItem
 
@@ -37,10 +42,14 @@ fun FolderItemComposable(
     folder: FolderItem,
     thumbnailBitmap: Bitmap?,
     onFolderClick: (Uri) -> Unit,
-    onDeleteFolder: (FolderItem) -> Unit
+    onDeleteFolder: (FolderItem) -> Unit,
+    onOpenFolder: (FolderItem) -> Unit,
+    onRefreshFolder: (FolderItem) -> Unit
 ) {
     val view = LocalView.current
     var showContextMenu by remember { mutableStateOf(false) }
+    var pressOffset by remember { mutableStateOf(DpOffset.Zero) }
+    val density = LocalDensity.current
 
     Box(
         modifier = Modifier
@@ -52,8 +61,11 @@ fun FolderItemComposable(
                     onTap = { 
                         onFolderClick(Uri.parse(folder.uri))
                     },
-                    onLongPress = {
+                    onLongPress = { offset ->
                         view.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
+                        pressOffset = with(density) {
+                            DpOffset(offset.x.toDp(), offset.y.toDp())
+                        }
                         showContextMenu = true
                     }
                 )
@@ -81,13 +93,46 @@ fun FolderItemComposable(
 
         DropdownMenu(
             expanded = showContextMenu,
-            onDismissRequest = { showContextMenu = false }
+            onDismissRequest = { showContextMenu = false },
+            offset = pressOffset
         ) {
+            DropdownMenuItem(
+                text = { Text("Refresh") },
+                onClick = {
+                    onRefreshFolder(folder)
+                    showContextMenu = false
+                },
+                leadingIcon = {
+                    Icon(
+                        Icons.Outlined.Refresh,
+                        contentDescription = "Refresh"
+                    )
+                }
+            )
             DropdownMenuItem(
                 text = { Text("Delete") },
                 onClick = {
                     onDeleteFolder(folder)
                     showContextMenu = false
+                },
+                leadingIcon = {
+                    Icon(
+                        Icons.Outlined.Delete,
+                        contentDescription = "Delete"
+                    )
+                }
+            )
+            DropdownMenuItem(
+                text = { Text("Open Explorer") },
+                onClick = {
+                    onOpenFolder(folder)
+                    showContextMenu = false
+                },
+                leadingIcon = {
+                    Icon(
+                        Icons.Outlined.FolderOpen,
+                        contentDescription = "Open Explorer"
+                    )
                 }
             )
         }

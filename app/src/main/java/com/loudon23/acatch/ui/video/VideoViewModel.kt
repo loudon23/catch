@@ -137,6 +137,13 @@ class VideoViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    fun refreshFolder(folder: FolderItem) {
+        viewModelScope.launch {
+            repository.deleteVideosByFolderUri(folder.uri)
+            scanVideosFromUri(Uri.parse(folder.uri))
+        }
+    }
+
     private fun scanDirectory(directory: DocumentFile, videoList: MutableList<VideoItem>, topLevelFolderUri: String) {
         for (file in directory.listFiles()) {
             if (file.isDirectory) {

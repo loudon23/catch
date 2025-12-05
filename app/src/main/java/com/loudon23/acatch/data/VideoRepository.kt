@@ -15,12 +15,20 @@ class VideoRepository(private val videoDao: VideoDao, private val folderDao: Fol
         videoDao.delete(video)
     }
 
+    suspend fun deleteVideosByFolderUri(folderUri: String) { // Add this function
+        videoDao.deleteVideosByFolderUri(folderUri)
+    }
+
     suspend fun deleteAllVideos() {
         videoDao.deleteAllVideos()
     }
 
     suspend fun insertFolder(folder: FolderItem) {
         folderDao.insertFolder(folder)
+    }
+
+    suspend fun deleteFolder(folder: FolderItem) { 
+        folderDao.deleteFolder(folder)
     }
 
     suspend fun deleteAllFolders() {

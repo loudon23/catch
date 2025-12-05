@@ -1,7 +1,11 @@
 package com.loudon23.acatch.ui.video
 
 import android.Manifest
+import android.content.ActivityNotFoundException
+import android.content.Intent
+import android.net.Uri
 import android.os.Build
+import android.provider.DocumentsContract
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -115,6 +119,25 @@ fun VideoListScreen(
                                 },
                                 onDeleteFolder = {
                                     videoViewModel.deleteFolder(it)
+                                },
+                                onOpenFolder = { 
+                                    val folderUri = Uri.parse(it.uri)
+                                    val documentUri = DocumentsContract.buildDocumentUriUsingTree(folderUri, DocumentsContract.getTreeDocumentId(folderUri))
+
+                                    val intent = Intent(Intent.ACTION_VIEW).apply {
+                                        setDataAndType(documentUri, "vnd.android.document/directory")
+                                        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                        setPackage("pl.solidexplorer2")
+                                    }
+                                    try {
+                                        context.startActivity(intent)
+                                    } catch (e: ActivityNotFoundException) {
+                                        Toast.makeText(context, "폴더를 열 수 있는 앱을 찾을 수 없습니다.", Toast.LENGTH_SHORT).show()
+                                    }
+                                },
+                                onRefreshFolder = {
+                                    videoViewModel.refreshFolder(it)
                                 }
                             )
                         }
