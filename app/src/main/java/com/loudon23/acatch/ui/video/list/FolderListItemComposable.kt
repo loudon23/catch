@@ -23,6 +23,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -38,8 +39,11 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
-import com.loudon23.acatch.data.FolderItem
+import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.net.toUri
+import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.ui.AspectRatioFrameLayout
+import com.loudon23.acatch.data.FolderItem
 
 @Composable
 fun FolderListItemComposable(
@@ -48,20 +52,31 @@ fun FolderListItemComposable(
     onFolderClick: (Uri) -> Unit,
     onDeleteFolder: (FolderItem) -> Unit,
     onOpenFolder: (FolderItem) -> Unit,
-    onRefreshFolder: (FolderItem) -> Unit
+    onRefreshFolder: (FolderItem) -> Unit,
+    player: ExoPlayer,
+    onPlayVideo: (String) -> Unit,
+    onStopPlayback: () -> Unit,
+    isPlaying: Boolean
 ) {
     val view = LocalView.current
     var showContextMenu by remember { mutableStateOf(false) }
     var pressOffset by remember { mutableStateOf(DpOffset.Zero) }
     val density = LocalDensity.current
 
+    LaunchedEffect(isPlaying, folder.thumbnailVideoUri) {
+        val videoUri = folder.thumbnailVideoUri
+        if (isPlaying && videoUri != null) {
+            onPlayVideo(videoUri)
+        }
+    }
+
     Box(
         modifier = Modifier
-            .aspectRatio(9f / 16f) // 비디오와 동일한 비율 유지
+            .aspectRatio(9f / 16f) // Revert to a fixed aspect ratio
             .padding(1.dp)
             .clip(RoundedCornerShape(8.dp))
             .background(Color.DarkGray)
-            .pointerInput(folder) { // Pass folder to restart gesture detection on change
+            .pointerInput(folder) { 
                 detectTapGestures(
                     onTap = { 
                         onFolderClick(folder.uri.toUri())
@@ -77,12 +92,25 @@ fun FolderListItemComposable(
             },
         contentAlignment = Alignment.Center
     ) {
-        if (thumbnailBitmap != null) {
+        if (isPlaying && folder.thumbnailVideoUri != null) {
+            AndroidView(
+                modifier = Modifier.fillMaxSize(),
+                factory = { ctx ->
+                    androidx.media3.ui.PlayerView(ctx).apply {
+                        useController = false
+                        resizeMode = AspectRatioFrameLayout.RESIZE_MODE_ZOOM // Equivalent to ContentScale.Crop
+                    }
+                },
+                update = { playerView ->
+                    playerView.player = if (isPlaying) player else null
+                }
+            )
+        } else if (thumbnailBitmap != null) {
             Image(
                 bitmap = thumbnailBitmap.asImageBitmap(),
                 contentDescription = folder.name,
                 modifier = Modifier.fillMaxSize(),
-                contentScale = ContentScale.Crop // 썸네일이 잘 보이도록 Crop 스케일 사용
+                contentScale = ContentScale.Crop // Revert to Crop
             )
         } else {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -90,13 +118,12 @@ fun FolderListItemComposable(
                     imageVector = Icons.Filled.Folder,
                     contentDescription = "Folder Icon",
                     tint = Color.White,
-                    modifier = Modifier.weight(1f) // 아이콘이 공간을 채우도록
+                    modifier = Modifier.weight(1f)
                 )
                 Text(folder.name, color = Color.White, modifier = Modifier.padding(top = 8.dp))
             }
         }
 
-        // 파일 개수 표시
         Box(
             modifier = Modifier
                 .fillMaxSize()

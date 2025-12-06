@@ -15,8 +15,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.loudon23.acatch.data.VideoItem
+import androidx.media3.common.Player
+import androidx.media3.exoplayer.ExoPlayer
 import com.loudon23.acatch.ui.video.VideoViewModel
 
 @OptIn(ExperimentalFoundationApi::class)
@@ -26,10 +28,23 @@ fun VideoDetailScreen(
     videoUri: String?,
     videoIndex: Int?,
     videoViewModel: VideoViewModel = viewModel(),
-    onDeleteVideo: (VideoItem) -> Unit,
-    onNavigateBack: () -> Unit
 ) {
     val folderItems by videoViewModel.folderListState.collectAsState()
+    val context = LocalContext.current
+
+    // Create a new ExoPlayer instance for this screen
+    val exoPlayer = remember {
+        ExoPlayer.Builder(context).build().apply {
+            repeatMode = Player.REPEAT_MODE_ONE // Set to repeat the current video
+        }
+    }
+
+    // Release the player when the composable is disposed
+    DisposableEffect(Unit) {
+        onDispose {
+            exoPlayer.release()
+        }
+    }
 
     if (folderItems.isEmpty()) {
         Box(
@@ -52,13 +67,6 @@ fun VideoDetailScreen(
         pageCount = { folderItems.size }
     )
 
-    // Stop playback when the screen is disposed.
-    DisposableEffect(Unit) {
-        onDispose {
-            videoViewModel.stopPlayback()
-        }
-    }
-
     VerticalPager(
         state = verticalPagerState,
         modifier = Modifier
@@ -75,10 +83,9 @@ fun VideoDetailScreen(
             folder = currentFolder,
             initialVideoUri = initialVideoForThisPage,
             initialVideoIndex = initialIndexForThisPage,
-            videoViewModel = videoViewModel,
-            onDeleteVideo = onDeleteVideo,
-            onNavigateBack = onNavigateBack,
-            isCurrentFolderPage = verticalPagerState.currentPage == folderIndex && !verticalPagerState.isScrollInProgress
+            videoViewModel = videoViewModel, // Still needed for thumbnails and video list
+            isCurrentFolderPage = verticalPagerState.currentPage == folderIndex && !verticalPagerState.isScrollInProgress,
+            player = exoPlayer // Pass the new ExoPlayer instance
         )
     }
 }

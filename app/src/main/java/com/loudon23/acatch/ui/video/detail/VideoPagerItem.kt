@@ -1,14 +1,12 @@
 package com.loudon23.acatch.ui.video.detail
 
 import android.content.ActivityNotFoundException
-import android.content.Intent // Add this import
-import android.net.Uri // Add this import
+import android.content.Intent
 import android.graphics.Bitmap
+import android.net.Uri
 import android.util.Log
-import android.view.HapticFeedbackConstants
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -31,10 +29,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
-import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.platform.LocalContext // Add this import
-import androidx.compose.ui.platform.LocalView
-import androidx.compose.ui.unit.DpOffset
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.media3.common.MediaItem
@@ -48,13 +43,7 @@ fun VideoPagerItem(
     video: VideoItem,
     thumbnailBitmap: Bitmap?,
     player: ExoPlayer,
-    onDeleteVideo: (VideoItem) -> Unit,
-    onNavigateBack: () -> Unit
 ) {
-    val view = LocalView.current
-    var showContextMenu by remember { mutableStateOf(false) }
-    var pressOffset by remember { mutableStateOf(DpOffset.Zero) }
-
     var currentMediaId by remember { mutableStateOf(player.currentMediaItem?.mediaId) }
     var playbackState by remember { mutableStateOf(player.playbackState) }
     val context = LocalContext.current // Get the current context
@@ -78,16 +67,7 @@ fun VideoPagerItem(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.Black)
-            .pointerInput(Unit) {
-                detectTapGestures(
-                    onLongPress = { offset ->
-                        view.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
-                        pressOffset = DpOffset(offset.x.dp, offset.y.dp)
-                        showContextMenu = true
-                    }
-                )
-            },
+            .background(Color.Black),
         contentAlignment = Alignment.Center
     ) {
         val isCurrentVideo = currentMediaId == video.uri

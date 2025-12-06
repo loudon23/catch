@@ -4,7 +4,6 @@ import android.app.Application
 import android.content.Intent
 import android.graphics.Bitmap
 import android.net.Uri
-import androidx.core.net.toUri
 import androidx.documentfile.provider.DocumentFile
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
@@ -18,7 +17,9 @@ import com.loudon23.acatch.data.VideoRepository
 import com.loudon23.acatch.utils.ThumbnailExtractor
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collectLatest
@@ -28,6 +29,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import androidx.core.net.toUri
 
 class VideoViewModel(application: Application) : AndroidViewModel(application) {
 
@@ -39,6 +41,11 @@ class VideoViewModel(application: Application) : AndroidViewModel(application) {
     val folderListState: StateFlow<List<FolderItem>>
 
     private val _currentFolderUri: MutableStateFlow<Uri?> = MutableStateFlow(null)
+    private val _currentlyPlayingFolderUri: MutableStateFlow<String?> = MutableStateFlow(null)
+    val currentlyPlayingFolderUri: StateFlow<String?> = _currentlyPlayingFolderUri
+
+    private val _playbackEnded: MutableSharedFlow<Unit> = MutableSharedFlow()
+    val playbackEnded: SharedFlow<Unit> = _playbackEnded
 
     private val _isLoading = MutableStateFlow(true)
     val isLoading: StateFlow<Boolean> = _isLoading
@@ -46,11 +53,20 @@ class VideoViewModel(application: Application) : AndroidViewModel(application) {
     val player: ExoPlayer
 
     init {
-        val database = AppDatabase.Companion.getDatabase(application)
+        val database = AppDatabase.getDatabase(application)
         repository = VideoRepository(database.videoDao(), database.folderDao())
 
         player = ExoPlayer.Builder(application).build().apply {
-            repeatMode = Player.REPEAT_MODE_ONE
+            repeatMode = Player.REPEAT_MODE_OFF // Set to OFF for sequential playback
+            addListener(object : Player.Listener {
+                override fun onPlaybackStateChanged(state: Int) {
+                    if (state == Player.STATE_ENDED) {
+                        viewModelScope.launch {
+                            _playbackEnded.emit(Unit)
+                        }
+                    }
+                }
+            })
         }
 
         folderListState = repository.allFolders
@@ -62,13 +78,13 @@ class VideoViewModel(application: Application) : AndroidViewModel(application) {
             }
             .stateIn(
                 scope = viewModelScope,
-                started = SharingStarted.Companion.WhileSubscribed(5_000),
+                started = SharingStarted.WhileSubscribed(5_000),
                 initialValue = emptyList()
             )
 
         videoListState = repository.allVideos.stateIn(
             scope = viewModelScope,
-            started = SharingStarted.Companion.WhileSubscribed(5_000),
+            started = SharingStarted.WhileSubscribed(5_000),
             initialValue = emptyList()
         )
 
@@ -99,6 +115,7 @@ class VideoViewModel(application: Application) : AndroidViewModel(application) {
     override fun onCleared() {
         super.onCleared()
         player.release()
+        _currentlyPlayingFolderUri.value = null
     }
 
     fun playVideo(videoUri: String) {
@@ -119,6 +136,13 @@ class VideoViewModel(application: Application) : AndroidViewModel(application) {
         player.clearMediaItems()
     }
 
+    fun setCurrentlyPlayingFolder(folderUri: String?) {
+        _currentlyPlayingFolderUri.value = folderUri
+        if (folderUri == null) {
+            stopPlayback()
+        }
+    }
+
     fun scanVideosFromUri(uri: Uri) {
         val contentResolver = getApplication<Application>().contentResolver
         contentResolver.takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
@@ -135,13 +159,7 @@ class VideoViewModel(application: Application) : AndroidViewModel(application) {
 
                     val thumbnailUri = videoList.firstOrNull()?.uri
 
-                    repository.insertFolder(
-                        FolderItem(
-                            uri = topLevelFolderUri,
-                            name = folderName,
-                            thumbnailVideoUri = thumbnailUri
-                        )
-                    )
+                    repository.insertFolder(FolderItem(uri = topLevelFolderUri, name = folderName, thumbnailVideoUri = thumbnailUri))
                     repository.insertVideos(videoList)
                     extractThumbnailsForVideos(videoList)
                 }

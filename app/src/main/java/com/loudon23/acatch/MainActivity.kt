@@ -80,13 +80,6 @@ class MainActivity : ComponentActivity() {
                                 videoUri = videoUri,
                                 videoIndex = videoIndex, // videoIndex 전달
                                 videoViewModel = videoViewModel,
-                                onDeleteVideo = { videoItem ->
-                                    videoViewModel.deleteVideo(videoItem)
-                                    // No need to popBackStack here as pager will handle it
-                                },
-                                onNavigateBack = {
-                                    navController.popBackStack()
-                                }
                             )
                         }
                     }

@@ -11,14 +11,13 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.media3.common.MediaItem
+import androidx.media3.exoplayer.ExoPlayer
 import com.loudon23.acatch.data.FolderItem
-import com.loudon23.acatch.data.VideoItem
 import com.loudon23.acatch.ui.video.VideoViewModel
-import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -27,11 +26,9 @@ fun VideoDetailHorizontalPager(
     initialVideoUri: String?,
     initialVideoIndex: Int?,
     videoViewModel: VideoViewModel,
-    onDeleteVideo: (VideoItem) -> Unit,
-    onNavigateBack: () -> Unit,
-    isCurrentFolderPage: Boolean
+    isCurrentFolderPage: Boolean,
+    player: ExoPlayer // Add the new player parameter
 ) {
-    val scope = rememberCoroutineScope()
     val allVideoItems by videoViewModel.videoListState.collectAsState()
     val thumbnails by videoViewModel.thumbnails.collectAsState()
 
@@ -60,8 +57,13 @@ fun VideoDetailHorizontalPager(
     LaunchedEffect(horizontalPagerState.settledPage, isCurrentFolderPage) {
         if (isCurrentFolderPage) {
             videoItems.getOrNull(horizontalPagerState.settledPage)?.let {
-                videoViewModel.playVideo(it.uri)
+                val mediaItem = MediaItem.fromUri(it.uri)
+                player.setMediaItem(mediaItem)
+                player.prepare()
+                player.playWhenReady = true
             }
+        } else {
+            player.stop()
         }
     }
 
@@ -76,19 +78,7 @@ fun VideoDetailHorizontalPager(
                 VideoPagerItem(
                     video = videoItem,
                     thumbnailBitmap = thumbnailBitmap,
-                    player = videoViewModel.player,
-                    onDeleteVideo = { itemToDelete ->
-                        onDeleteVideo(itemToDelete)
-                        if (videoItems.size == 1) {
-                            onNavigateBack()
-                        } else if (page >= videoItems.size - 1 && videoItems.isNotEmpty()) {
-                            scope.launch {
-                                val newPage = (horizontalPagerState.currentPage - 1).coerceAtLeast(0)
-                                horizontalPagerState.animateScrollToPage(newPage)
-                            }
-                        }
-                    },
-                    onNavigateBack = onNavigateBack
+                    player = player, // Pass the new player instance
                 )
             } else {
                 Text("Loading video...", color = Color.White)
