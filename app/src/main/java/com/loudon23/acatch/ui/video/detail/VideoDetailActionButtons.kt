@@ -21,6 +21,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.loudon23.acatch.data.VideoItem
+import androidx.core.net.toUri
 
 @Composable
 fun VideoDetailActionButtons(
@@ -43,7 +44,7 @@ fun VideoDetailActionButtons(
         }
         Spacer(modifier = Modifier.size(8.dp))
         IconButton(onClick = {
-            val folderUri = Uri.parse(videoItem.folderUri)
+            val folderUri = videoItem.folderUri.toUri()
             Log.d("VideoPagerItem", "folderUri: $folderUri")
             val intent = Intent(Intent.ACTION_VIEW).apply {
                 setDataAndType(folderUri, "vnd.android.document/directory")
