@@ -32,7 +32,6 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
-import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.ui.PlayerView
@@ -43,19 +42,15 @@ fun VideoPagerItem(
     video: VideoItem,
     thumbnailBitmap: Bitmap?,
     player: ExoPlayer,
+    isCurrentPage: Boolean // New parameter
 ) {
-    var currentMediaId by remember { mutableStateOf(player.currentMediaItem?.mediaId) }
     var playbackState by remember { mutableStateOf(player.playbackState) }
-    val context = LocalContext.current // Get the current context
+    val context = LocalContext.current
 
     DisposableEffect(player) {
         val listener = object : Player.Listener {
             override fun onPlaybackStateChanged(state: Int) {
                 playbackState = state
-            }
-
-            override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
-                currentMediaId = mediaItem?.mediaId
             }
         }
         player.addListener(listener)
@@ -70,8 +65,6 @@ fun VideoPagerItem(
             .background(Color.Black),
         contentAlignment = Alignment.Center
     ) {
-        val isCurrentVideo = currentMediaId == video.uri
-
         AndroidView(
             modifier = Modifier.fillMaxSize(),
             factory = { ctx ->
@@ -80,11 +73,13 @@ fun VideoPagerItem(
                 }
             },
             update = { playerView ->
-                playerView.player = if (isCurrentVideo) player else null
+                // The parent composable now decides if this page is active.
+                // If so, attach the player.
+                playerView.player = if (isCurrentPage) player else null
             }
         )
 
-        if (thumbnailBitmap != null && (!isCurrentVideo || playbackState != Player.STATE_READY)) {
+        if (thumbnailBitmap != null && (!isCurrentPage || playbackState != Player.STATE_READY)) {
             Image(
                 bitmap = thumbnailBitmap.asImageBitmap(),
                 contentDescription = video.name,

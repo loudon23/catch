@@ -7,6 +7,7 @@ import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -14,7 +15,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.media3.common.MediaItem
+import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
 import com.loudon23.acatch.data.FolderItem
 import com.loudon23.acatch.ui.video.VideoViewModel
@@ -26,11 +29,23 @@ fun VideoDetailHorizontalPager(
     initialVideoUri: String?,
     initialVideoIndex: Int?,
     videoViewModel: VideoViewModel,
-    isCurrentFolderPage: Boolean,
-    player: ExoPlayer // Add the new player parameter
+    isCurrentFolderPage: Boolean
 ) {
+    val context = LocalContext.current
     val allVideoItems by videoViewModel.videoListState.collectAsState()
     val thumbnails by videoViewModel.thumbnails.collectAsState()
+
+    val player = remember {
+        ExoPlayer.Builder(context).build().apply {
+            repeatMode = Player.REPEAT_MODE_ONE
+        }
+    }
+
+    DisposableEffect(Unit) {
+        onDispose {
+            player.release()
+        }
+    }
 
     val videoItems = remember(allVideoItems, folder.uri) {
         allVideoItems.filter { it.folderUri == folder.uri }
@@ -53,7 +68,6 @@ fun VideoDetailHorizontalPager(
         pageCount = { videoItems.size }
     )
 
-    // When the horizontal page changes, play the video, but only if it's the active folder.
     LaunchedEffect(horizontalPagerState.settledPage, isCurrentFolderPage) {
         if (isCurrentFolderPage) {
             videoItems.getOrNull(horizontalPagerState.settledPage)?.let {
@@ -61,9 +75,12 @@ fun VideoDetailHorizontalPager(
                 player.setMediaItem(mediaItem)
                 player.prepare()
                 player.playWhenReady = true
+            } ?: run {
+                player.stop()
+                player.clearMediaItems()
             }
         } else {
-            player.stop()
+            player.pause()
         }
     }
 
@@ -79,6 +96,7 @@ fun VideoDetailHorizontalPager(
                     video = videoItem,
                     thumbnailBitmap = thumbnailBitmap,
                     player = player, // Pass the new player instance
+                    isCurrentPage = horizontalPagerState.currentPage == page
                 )
             } else {
                 Text("Loading video...", color = Color.White)

@@ -8,17 +8,13 @@ import androidx.compose.foundation.pager.VerticalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.media3.common.Player
-import androidx.media3.exoplayer.ExoPlayer
 import com.loudon23.acatch.ui.video.VideoViewModel
 
 @OptIn(ExperimentalFoundationApi::class)
@@ -30,21 +26,6 @@ fun VideoDetailScreen(
     videoViewModel: VideoViewModel = viewModel(),
 ) {
     val folderItems by videoViewModel.folderListState.collectAsState()
-    val context = LocalContext.current
-
-    // Create a new ExoPlayer instance for this screen
-    val exoPlayer = remember {
-        ExoPlayer.Builder(context).build().apply {
-            repeatMode = Player.REPEAT_MODE_ONE // Set to repeat the current video
-        }
-    }
-
-    // Release the player when the composable is disposed
-    DisposableEffect(Unit) {
-        onDispose {
-            exoPlayer.release()
-        }
-    }
 
     if (folderItems.isEmpty()) {
         Box(
@@ -84,8 +65,7 @@ fun VideoDetailScreen(
             initialVideoUri = initialVideoForThisPage,
             initialVideoIndex = initialIndexForThisPage,
             videoViewModel = videoViewModel, // Still needed for thumbnails and video list
-            isCurrentFolderPage = verticalPagerState.currentPage == folderIndex && !verticalPagerState.isScrollInProgress,
-            player = exoPlayer // Pass the new ExoPlayer instance
+            isCurrentFolderPage = verticalPagerState.currentPage == folderIndex
         )
     }
 }
