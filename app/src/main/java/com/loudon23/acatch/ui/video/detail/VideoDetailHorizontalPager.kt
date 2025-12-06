@@ -1,6 +1,5 @@
 package com.loudon23.acatch.ui.video.detail
 
-import android.app.Activity
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
@@ -21,9 +20,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalView
-import androidx.core.view.WindowInsetsCompat
-import androidx.core.view.WindowInsetsControllerCompat
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
@@ -38,7 +34,9 @@ fun VideoDetailHorizontalPager(
     initialVideoUri: String?,
     initialVideoIndex: Int?,
     videoViewModel: VideoViewModel,
-    isCurrentFolderPage: Boolean
+    isCurrentFolderPage: Boolean,
+    controlsVisible: Boolean,
+    onControlsVisibleChange: (Boolean) -> Unit
 ) {
     val context = LocalContext.current
     val allVideoItems by videoViewModel.videoListState.collectAsState()
@@ -51,9 +49,6 @@ fun VideoDetailHorizontalPager(
     }
 
     var isPlaying by remember { mutableStateOf(player.isPlaying) }
-    var controlsVisible by remember { mutableStateOf(false) }
-
-    val view = LocalView.current
 
     DisposableEffect(player) {
         val listener = object : Player.Listener {
@@ -67,33 +62,16 @@ fun VideoDetailHorizontalPager(
         }
     }
 
-    // Hide/Show System Bars based on controlsVisible state
-    LaunchedEffect(controlsVisible) {
-        val window = (view.context as? Activity)?.window ?: return@LaunchedEffect
-        val insetsController = WindowInsetsControllerCompat(window, view)
-        if (controlsVisible) {
-            insetsController.show(WindowInsetsCompat.Type.systemBars())
-        } else {
-            insetsController.systemBarsBehavior =
-                WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
-            insetsController.hide(WindowInsetsCompat.Type.systemBars())
-        }
-    }
-
     LaunchedEffect(controlsVisible, isPlaying) {
         if (isPlaying && controlsVisible) {
             delay(3000L)
-            controlsVisible = false
+            onControlsVisibleChange(false)
         }
     }
 
     DisposableEffect(Unit) {
         onDispose {
             player.release()
-            // Ensure system bars are shown when leaving the screen
-            (view.context as? Activity)?.window?.let { window ->
-                WindowInsetsControllerCompat(window, view).show(WindowInsetsCompat.Type.systemBars())
-            }
         }
     }
 
@@ -141,7 +119,7 @@ fun VideoDetailHorizontalPager(
                 .fillMaxSize()
                 .pointerInput(Unit) {
                     detectTapGestures(onTap = {
-                        controlsVisible = !controlsVisible
+                        onControlsVisibleChange(!controlsVisible)
                     })
                 }
         ) { page ->
