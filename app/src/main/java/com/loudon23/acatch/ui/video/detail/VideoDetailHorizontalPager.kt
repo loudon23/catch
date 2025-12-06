@@ -126,7 +126,7 @@ fun VideoDetailHorizontalPager(
             val videoItem = videoItems.getOrNull(page)
             if (videoItem != null) {
                 val thumbnailBitmap = thumbnails[videoItem.uri]
-                VideoPagerItem(
+                VideoDetailPlayer(
                     video = videoItem,
                     thumbnailBitmap = thumbnailBitmap,
                     player = player,

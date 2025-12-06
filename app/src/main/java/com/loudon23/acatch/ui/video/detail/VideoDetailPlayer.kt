@@ -22,7 +22,7 @@ import androidx.media3.ui.PlayerView
 import com.loudon23.acatch.data.VideoItem
 
 @Composable
-fun VideoPagerItem(
+fun VideoDetailPlayer(
     video: VideoItem,
     thumbnailBitmap: Bitmap?,
     player: ExoPlayer,
