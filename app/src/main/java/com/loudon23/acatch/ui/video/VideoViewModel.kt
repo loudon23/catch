@@ -21,6 +21,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
@@ -52,11 +53,18 @@ class VideoViewModel(application: Application) : AndroidViewModel(application) {
             repeatMode = Player.REPEAT_MODE_ONE
         }
 
-        folderListState = repository.allFolders.stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5_000),
-            initialValue = emptyList()
-        )
+        folderListState = repository.allFolders
+            .combine(repository.allVideos) { folders, videos ->
+                val videoCounts = videos.groupBy { it.folderUri }.mapValues { it.value.size }
+                folders.map { folder ->
+                    folder.copy(videoCount = videoCounts[folder.uri] ?: 0)
+                }
+            }
+            .stateIn(
+                scope = viewModelScope,
+                started = SharingStarted.WhileSubscribed(5_000),
+                initialValue = emptyList()
+            )
 
         videoListState = repository.allVideos.stateIn(
             scope = viewModelScope,

@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.outlined.Delete
@@ -19,6 +20,7 @@ import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -27,6 +29,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.input.pointer.pointerInput
@@ -55,7 +58,8 @@ fun FolderItemComposable(
     Box(
         modifier = Modifier
             .aspectRatio(9f / 16f) // 비디오와 동일한 비율 유지
-            .padding(4.dp)
+            .padding(1.dp)
+            .clip(RoundedCornerShape(8.dp))
             .background(Color.DarkGray)
             .pointerInput(folder) { // Pass folder to restart gesture detection on change
                 detectTapGestures(
@@ -90,6 +94,23 @@ fun FolderItemComposable(
                 )
                 Text(folder.name, color = Color.White, modifier = Modifier.padding(top = 8.dp))
             }
+        }
+
+        // 파일 개수 표시
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(8.dp),
+            contentAlignment = Alignment.BottomEnd
+        ) {
+            Text(
+                text = folder.videoCount.toString(),
+                color = Color.White,
+                style = MaterialTheme.typography.labelSmall,
+                modifier = Modifier
+                    .background(color = Color.Black.copy(alpha = 0.5f), shape = RoundedCornerShape(4.dp))
+                    .padding(horizontal = 6.dp, vertical = 2.dp)
+            )
         }
 
         DropdownMenu(

@@ -30,5 +30,6 @@ data class FolderItem(
     @PrimaryKey
     val uri: String,
     val name: String,
+    val videoCount: Int = 0,
     val thumbnailVideoUri: String? = null // Add this field for the representative video
 )
