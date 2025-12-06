@@ -1,4 +1,4 @@
-package com.loudon23.acatch.ui.video
+package com.loudon23.acatch.ui.video.list
 
 import android.net.Uri
 import android.widget.Toast

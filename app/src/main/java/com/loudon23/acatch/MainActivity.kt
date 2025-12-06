@@ -9,7 +9,6 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -19,11 +18,9 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.loudon23.acatch.ui.theme.CatchTheme
-import com.loudon23.acatch.ui.video.VideoDetailScreen
-import com.loudon23.acatch.ui.video.VideoListScreen
+import com.loudon23.acatch.ui.video.detail.VideoDetailScreen
+import com.loudon23.acatch.ui.video.list.FolderListScreen
 import com.loudon23.acatch.ui.video.VideoViewModel
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.launch
 
 // 내비게이션 경로 정의
 object NavRoutes {
@@ -53,7 +50,7 @@ class MainActivity : ComponentActivity() {
 
                     NavHost(navController = navController, startDestination = NavRoutes.VIDEO_LIST) {
                         composable(NavRoutes.VIDEO_LIST) {
-                            VideoListScreen(
+                            FolderListScreen(
                                 videoViewModel = videoViewModel,
                                 onNavigateToDetail = { folderUri, videoUri, videoIndex -> // videoIndex 인자 추가
                                     // 내비게이션 시도 시 로그 출력

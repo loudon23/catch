@@ -4,6 +4,7 @@ import android.app.Application
 import android.content.Intent
 import android.graphics.Bitmap
 import android.net.Uri
+import androidx.core.net.toUri
 import androidx.documentfile.provider.DocumentFile
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
@@ -27,7 +28,6 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import androidx.core.net.toUri
 
 class VideoViewModel(application: Application) : AndroidViewModel(application) {
 
@@ -46,7 +46,7 @@ class VideoViewModel(application: Application) : AndroidViewModel(application) {
     val player: ExoPlayer
 
     init {
-        val database = AppDatabase.getDatabase(application)
+        val database = AppDatabase.Companion.getDatabase(application)
         repository = VideoRepository(database.videoDao(), database.folderDao())
 
         player = ExoPlayer.Builder(application).build().apply {
@@ -62,13 +62,13 @@ class VideoViewModel(application: Application) : AndroidViewModel(application) {
             }
             .stateIn(
                 scope = viewModelScope,
-                started = SharingStarted.WhileSubscribed(5_000),
+                started = SharingStarted.Companion.WhileSubscribed(5_000),
                 initialValue = emptyList()
             )
 
         videoListState = repository.allVideos.stateIn(
             scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5_000),
+            started = SharingStarted.Companion.WhileSubscribed(5_000),
             initialValue = emptyList()
         )
 
@@ -121,7 +121,7 @@ class VideoViewModel(application: Application) : AndroidViewModel(application) {
 
     fun scanVideosFromUri(uri: Uri) {
         val contentResolver = getApplication<Application>().contentResolver
-        contentResolver.takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        contentResolver.takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
 
         viewModelScope.launch {
             withContext(Dispatchers.IO) {
@@ -135,7 +135,13 @@ class VideoViewModel(application: Application) : AndroidViewModel(application) {
 
                     val thumbnailUri = videoList.firstOrNull()?.uri
 
-                    repository.insertFolder(FolderItem(uri = topLevelFolderUri, name = folderName, thumbnailVideoUri = thumbnailUri))
+                    repository.insertFolder(
+                        FolderItem(
+                            uri = topLevelFolderUri,
+                            name = folderName,
+                            thumbnailVideoUri = thumbnailUri
+                        )
+                    )
                     repository.insertVideos(videoList)
                     extractThumbnailsForVideos(videoList)
                 }

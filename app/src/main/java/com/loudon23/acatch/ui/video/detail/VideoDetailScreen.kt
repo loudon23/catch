@@ -1,4 +1,4 @@
-package com.loudon23.acatch.ui.video
+package com.loudon23.acatch.ui.video.detail
 
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
@@ -17,6 +17,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.loudon23.acatch.data.VideoItem
+import com.loudon23.acatch.ui.video.VideoViewModel
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -70,7 +71,7 @@ fun VideoDetailScreen(
         val initialVideoForThisPage = if (isInitialFolder) videoUri else null
         val initialIndexForThisPage = if (isInitialFolder) videoIndex else 0
 
-        FolderVideoPager(
+        VideoDetailHorizontalPager(
             folder = currentFolder,
             initialVideoUri = initialVideoForThisPage,
             initialVideoIndex = initialIndexForThisPage,

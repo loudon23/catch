@@ -1,4 +1,4 @@
-package com.loudon23.acatch.ui.video
+package com.loudon23.acatch.ui.video.list
 
 import android.graphics.Bitmap
 import android.net.Uri
@@ -42,7 +42,7 @@ import com.loudon23.acatch.data.FolderItem
 import androidx.core.net.toUri
 
 @Composable
-fun FolderItemComposable(
+fun FolderListItemComposable(
     folder: FolderItem,
     thumbnailBitmap: Bitmap?,
     onFolderClick: (Uri) -> Unit,

@@ -1,4 +1,4 @@
-package com.loudon23.acatch.ui.video
+package com.loudon23.acatch.ui.video.list
 
 import android.Manifest
 import android.content.ActivityNotFoundException
@@ -34,12 +34,13 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberPermissionState
+import com.loudon23.acatch.ui.video.VideoViewModel
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalPermissionsApi::class)
 @Composable
-fun VideoListScreen(
+fun FolderListScreen(
     videoViewModel: VideoViewModel = viewModel(),
     onNavigateToDetail: (String, String, Int) -> Unit // 상세 화면으로 이동하기 위한 콜백 시그니처 변경 (String, String, Int)
 ) {
@@ -85,7 +86,7 @@ fun VideoListScreen(
                 ) {
                     if (isLoading) {
                         items(4) { // Show 4 skeletons while loading
-                            VideoItemSkeleton()
+                            FolderListItemSkeleton()
                         }
                     } else if (folderItems.isEmpty()) {
                         item { // Use item scope for single element
@@ -99,32 +100,49 @@ fun VideoListScreen(
                             }
                         }
                     } else {
-                        itemsIndexed(folderItems, key = { _, folderItem -> folderItem.uri }) { _, folderItem ->
+                        itemsIndexed(
+                            folderItems,
+                            key = { _, folderItem -> folderItem.uri }) { _, folderItem ->
                             val folderThumbnailBitmap = folderItem.thumbnailVideoUri?.let { uri ->
                                 thumbnails[uri]
                             }
-                            FolderItemComposable(
+                            FolderListItemComposable(
                                 folder = folderItem,
                                 thumbnailBitmap = folderThumbnailBitmap,
                                 onFolderClick = {
                                     scope.launch {
-                                        val videosInFolder = videoViewModel.getVideosForFolder(it).firstOrNull()
+                                        val videosInFolder =
+                                            videoViewModel.getVideosForFolder(it).firstOrNull()
                                         if (!videosInFolder.isNullOrEmpty()) {
-                                            onNavigateToDetail(folderItem.uri, videosInFolder.first().uri, 0)
+                                            onNavigateToDetail(
+                                                folderItem.uri,
+                                                videosInFolder.first().uri,
+                                                0
+                                            )
                                         } else {
-                                            Toast.makeText(context, "이 폴더에는 비디오가 없습니다.", Toast.LENGTH_SHORT).show()
+                                            Toast.makeText(
+                                                context,
+                                                "이 폴더에는 비디오가 없습니다.",
+                                                Toast.LENGTH_SHORT
+                                            ).show()
                                         }
                                     }
                                 },
                                 onDeleteFolder = {
                                     videoViewModel.deleteFolder(it)
                                 },
-                                onOpenFolder = { 
+                                onOpenFolder = {
                                     val folderUri = it.uri.toUri()
-                                    val documentUri = DocumentsContract.buildDocumentUriUsingTree(folderUri, DocumentsContract.getTreeDocumentId(folderUri))
+                                    val documentUri = DocumentsContract.buildDocumentUriUsingTree(
+                                        folderUri,
+                                        DocumentsContract.getTreeDocumentId(folderUri)
+                                    )
 
                                     val intent = Intent(Intent.ACTION_VIEW).apply {
-                                        setDataAndType(documentUri, "vnd.android.document/directory")
+                                        setDataAndType(
+                                            documentUri,
+                                            "vnd.android.document/directory"
+                                        )
                                         addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                                         addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                                         setPackage("pl.solidexplorer2")
@@ -132,7 +150,11 @@ fun VideoListScreen(
                                     try {
                                         context.startActivity(intent)
                                     } catch (_: ActivityNotFoundException) {
-                                        Toast.makeText(context, "폴더를 열 수 있는 앱을 찾을 수 없습니다.", Toast.LENGTH_SHORT).show()
+                                        Toast.makeText(
+                                            context,
+                                            "폴더를 열 수 있는 앱을 찾을 수 없습니다.",
+                                            Toast.LENGTH_SHORT
+                                        ).show()
                                     }
                                 },
                                 onRefreshFolder = {

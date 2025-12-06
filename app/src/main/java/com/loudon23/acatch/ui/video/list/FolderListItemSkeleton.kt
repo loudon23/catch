@@ -1,4 +1,4 @@
-package com.loudon23.acatch.ui.video
+package com.loudon23.acatch.ui.video.list
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -10,7 +10,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 
 @Composable
-fun VideoItemSkeleton(modifier: Modifier = Modifier) {
+fun FolderListItemSkeleton(modifier: Modifier = Modifier) {
     Box(
         modifier = modifier
             .aspectRatio(9f / 16f)
