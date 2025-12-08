@@ -15,6 +15,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
 import com.loudon23.acatch.data.VideoItem
@@ -28,15 +29,29 @@ fun VideoDetailPlayer(
     isCurrentPage: Boolean,
     progress: Float
 ) {
-    var playbackState by remember { mutableStateOf(player.playbackState) }
+    var isVideoRendered by remember { mutableStateOf(false) }
 
-    DisposableEffect(player) {
+    DisposableEffect(player, isCurrentPage) {
         val listener = object : Player.Listener {
-            override fun onPlaybackStateChanged(state: Int) {
-                playbackState = state
+            override fun onRenderedFirstFrame() {
+                if (isCurrentPage) {
+                    isVideoRendered = true
+                }
+            }
+
+            override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
+                if (isCurrentPage) {
+                    isVideoRendered = false
+                }
             }
         }
         player.addListener(listener)
+
+        // Reset isVideoRendered immediately when this composable becomes current or player changes
+        if (isCurrentPage) {
+            isVideoRendered = false
+        }
+
         onDispose {
             player.removeListener(listener)
         }
@@ -50,7 +65,7 @@ fun VideoDetailPlayer(
     ) {
         CommonVideoPlayerView(player = player, isPlaying = isCurrentPage)
 
-        if (thumbnailBitmap != null && (!isCurrentPage || playbackState != Player.STATE_READY)) {
+        if (thumbnailBitmap != null && (!isCurrentPage || !isVideoRendered)) {
             Image(
                 bitmap = thumbnailBitmap.asImageBitmap(),
                 contentDescription = video.name,
