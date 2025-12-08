@@ -77,6 +77,15 @@ dependencies {
     // Splash Screen
     implementation(libs.androidx.core.splashscreen)
 
+    // Biometric authentication
+    implementation("androidx.biometric:biometric:1.1.0")
+
+    // AppCompat for FragmentActivity
+    implementation(libs.androidx.appcompat)
+
+    // Material Design Components for Material3 XML theme
+    implementation("com.google.android.material:material:1.12.0")
+
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
