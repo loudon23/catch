@@ -8,7 +8,6 @@ import androidx.compose.foundation.pager.VerticalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -18,7 +17,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import com.loudon23.acatch.ui.video.VideoViewModel
 
 @OptIn(ExperimentalFoundationApi::class)
@@ -31,23 +29,6 @@ fun VideoDetailScreen(
 ) {
     val folderItems by videoViewModel.folderListState.collectAsState()
     var controlsVisible by remember { mutableStateOf(false) }
-    val systemUiController = rememberSystemUiController()
-
-    DisposableEffect(systemUiController) {
-        // Set the navigation bar to be transparent
-        systemUiController.setSystemBarsColor(
-            color = Color.Transparent,
-            darkIcons = false
-        )
-
-        onDispose {
-            // Restore the original system bar color
-            systemUiController.setSystemBarsColor(
-                color = Color.Black,
-                darkIcons = false
-            )
-        }
-    }
 
     if (folderItems.isEmpty()) {
         Box(
