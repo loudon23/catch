@@ -74,8 +74,7 @@ fun FolderListItemComposable(
 
     Box(
         modifier = Modifier
-            .aspectRatio(9f / 16f) // Revert to a fixed aspect ratio
-            .padding(1.dp)
+            .aspectRatio(464f / 688f) // Set aspect ratio to 464/688
             .clip(RoundedCornerShape(8.dp))
             .background(Color.DarkGray)
             .pointerInput(folder) { 

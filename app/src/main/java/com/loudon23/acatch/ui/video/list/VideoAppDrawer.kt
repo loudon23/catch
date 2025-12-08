@@ -40,7 +40,6 @@ fun VideoAppDrawer(
         drawerContent = {
             ModalDrawerSheet {
                 Column(modifier = Modifier.padding(16.dp)) {
-                    Text("Catch Menu", modifier = Modifier.padding(bottom = 16.dp))
                     NavigationDrawerItem(
                         label = { Text("Add Folder") },
                         selected = false,
