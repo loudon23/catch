@@ -4,6 +4,7 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material3.Text
@@ -12,6 +13,7 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -20,6 +22,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.dp
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
@@ -42,9 +45,24 @@ fun VideoDetailHorizontalPager(
     val allVideoItems by videoViewModel.videoListState.collectAsState()
     val thumbnails by videoViewModel.thumbnails.collectAsState()
 
+    var progress by remember { mutableFloatStateOf(0f) }
+
     val player = remember {
         ExoPlayer.Builder(context).build().apply {
             repeatMode = Player.REPEAT_MODE_ONE
+        }
+    }
+
+    LaunchedEffect(player, isCurrentFolderPage) {
+        if (isCurrentFolderPage) {
+            while (true) {
+                progress = if (player.duration > 0) {
+                    player.currentPosition.toFloat() / player.duration.toFloat()
+                } else {
+                    0f
+                }
+                delay(100) // Update progress every 100ms
+            }
         }
     }
 
@@ -119,7 +137,8 @@ fun VideoDetailHorizontalPager(
                 .fillMaxSize()
                 .pointerInput(Unit) {
                     detectTapGestures(onTap = {
-                        onControlsVisibleChange(!controlsVisible)
+                        player.playWhenReady = !player.playWhenReady
+                        onControlsVisibleChange(true)
                     })
                 }
         ) { page ->
@@ -130,7 +149,9 @@ fun VideoDetailHorizontalPager(
                     video = videoItem,
                     thumbnailBitmap = thumbnailBitmap,
                     player = player,
-                    isCurrentPage = horizontalPagerState.currentPage == page
+                    isCurrentPage = horizontalPagerState.currentPage == page,
+                    controlsVisible = controlsVisible,
+                    progress = progress
                 )
             } else {
                 Text("Loading video...", color = Color.White)
@@ -141,7 +162,9 @@ fun VideoDetailHorizontalPager(
             PagerIndicator(
                 currentPage = horizontalPagerState.currentPage,
                 pageCount = videoItems.size,
-                modifier = Modifier.align(Alignment.BottomCenter)
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(bottom = 16.dp)
             )
 
             val currentVideoItem = videoItems.getOrNull(horizontalPagerState.currentPage)
