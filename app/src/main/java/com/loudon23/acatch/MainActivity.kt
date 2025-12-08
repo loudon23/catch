@@ -45,7 +45,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var promptInfo: BiometricPrompt.PromptInfo
 
     // 인증 상태를 추적하는 Compose State
-    private var isAuthenticated by mutableStateOf(false)
+    private var isAuthenticated by mutableStateOf(true)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -53,7 +53,7 @@ class MainActivity : AppCompatActivity() {
         enableEdgeToEdge()
 
         setupBiometricPrompt()
-        authenticateWithBiometrics() // 앱 시작 시 생체 인증 시작
+        // authenticateWithBiometrics() // 앱 시작 시 생체 인증 시작
 
         setContent {
             CatchTheme(dynamicColor = false) {

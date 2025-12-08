@@ -25,6 +25,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -43,6 +44,7 @@ import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.net.toUri
+import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.ui.AspectRatioFrameLayout
 import com.loudon23.acatch.data.FolderItem
@@ -65,11 +67,33 @@ fun FolderListItemComposable(
     var showContextMenu by remember { mutableStateOf(false) }
     var pressOffset by remember { mutableStateOf(DpOffset.Zero) }
     val density = LocalDensity.current
+    var isVideoRendered by remember { mutableStateOf(false) }
 
+    // This effect handles playing the video and resetting the rendered state
     LaunchedEffect(isPlaying, folder.thumbnailVideoUri) {
         val videoUri = folder.thumbnailVideoUri
         if (isPlaying && videoUri != null) {
             onPlayVideo(videoUri)
+        } else {
+            isVideoRendered = false
+        }
+    }
+
+    // This effect listens for the first frame to be rendered to hide the thumbnail
+    DisposableEffect(player, isPlaying) {
+        val listener = object : Player.Listener {
+            override fun onRenderedFirstFrame() {
+                super.onRenderedFirstFrame()
+                isVideoRendered = true
+            }
+        }
+
+        if (isPlaying) {
+            player.addListener(listener)
+        }
+
+        onDispose {
+            player.removeListener(listener)
         }
     }
 
@@ -78,9 +102,9 @@ fun FolderListItemComposable(
             .aspectRatio(464f / 688f) // Set aspect ratio to 464/688
             .clip(RoundedCornerShape(8.dp))
             .background(Color.DarkGray)
-            .pointerInput(folder) { 
+            .pointerInput(folder) {
                 detectTapGestures(
-                    onTap = { 
+                    onTap = {
                         onFolderClick(folder.uri.toUri())
                     },
                     onLongPress = { offset ->
@@ -94,6 +118,7 @@ fun FolderListItemComposable(
             },
         contentAlignment = Alignment.Center
     ) {
+        // Layer 1: Video Player (background)
         if (isPlaying && folder.thumbnailVideoUri != null) {
             AndroidView(
                 modifier = Modifier.fillMaxSize(),
@@ -107,38 +132,44 @@ fun FolderListItemComposable(
                     playerView.player = if (isPlaying) player else null
                 }
             )
-        } else if (thumbnailBitmap != null) {
-            Image(
-                bitmap = thumbnailBitmap.asImageBitmap(),
-                contentDescription = folder.name,
-                modifier = Modifier.fillMaxSize(),
-                contentScale = ContentScale.Crop // Revert to Crop
-            )
-            Box(
-                modifier = Modifier
-                    .fillMaxSize(),
-                contentAlignment = Alignment.BottomStart
-            ) {
-                IconButton(onClick = onPlayIconClick, modifier = Modifier.padding(0.dp)) {
-                    Icon(
-                        imageVector = Icons.Filled.PlayArrow,
-                        contentDescription = "Play Icon",
-                        tint = Color.White
-                    )
-                }
-            }
-        } else {
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Icon(
-                    imageVector = Icons.Filled.Folder,
-                    contentDescription = "Folder Icon",
-                    tint = Color.White,
-                    modifier = Modifier.weight(1f)
+        }
+
+        // Layer 2: Thumbnail or fallback icon (foreground overlay)
+        if (!isVideoRendered) {
+            if (thumbnailBitmap != null) {
+                Image(
+                    bitmap = thumbnailBitmap.asImageBitmap(),
+                    contentDescription = folder.name,
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.Crop // Revert to Crop
                 )
-                Text(folder.name, color = Color.White, modifier = Modifier.padding(top = 8.dp))
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize(),
+                    contentAlignment = Alignment.BottomStart
+                ) {
+                    IconButton(onClick = onPlayIconClick, modifier = Modifier.padding(0.dp)) {
+                        Icon(
+                            imageVector = Icons.Filled.PlayArrow,
+                            contentDescription = "Play Icon",
+                            tint = Color.White
+                        )
+                    }
+                }
+            } else {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Icon(
+                        imageVector = Icons.Filled.Folder,
+                        contentDescription = "Folder Icon",
+                        tint = Color.White,
+                        modifier = Modifier.weight(1f)
+                    )
+                    Text(folder.name, color = Color.White, modifier = Modifier.padding(top = 8.dp))
+                }
             }
         }
 
+        // Layer 3: Overlays that should always be on top
         Box(
             modifier = Modifier
                 .fillMaxSize()
