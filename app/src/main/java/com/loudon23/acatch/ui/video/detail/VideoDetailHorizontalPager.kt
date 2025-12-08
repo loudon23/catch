@@ -1,5 +1,10 @@
 package com.loudon23.acatch.ui.video.detail
 
+import android.app.Activity
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
@@ -22,7 +27,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.unit.dp
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
@@ -53,6 +62,19 @@ fun VideoDetailHorizontalPager(
         }
     }
 
+    val view = LocalView.current
+    LaunchedEffect(controlsVisible) {
+        val window = (view.context as? Activity)?.window ?: return@LaunchedEffect
+        val insetsController = WindowCompat.getInsetsController(window, view)
+        if (controlsVisible) {
+            insetsController.show(WindowInsetsCompat.Type.systemBars())
+        } else {
+            insetsController.hide(WindowInsetsCompat.Type.systemBars())
+            insetsController.systemBarsBehavior =
+                WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+        }
+    }
+
     LaunchedEffect(player, isCurrentFolderPage) {
         if (isCurrentFolderPage) {
             while (true) {
@@ -80,8 +102,8 @@ fun VideoDetailHorizontalPager(
         }
     }
 
-    LaunchedEffect(controlsVisible, isPlaying) {
-        if (isPlaying && controlsVisible) {
+    LaunchedEffect(controlsVisible) {
+        if (controlsVisible) {
             delay(3000L)
             onControlsVisibleChange(false)
         }
@@ -137,8 +159,7 @@ fun VideoDetailHorizontalPager(
                 .fillMaxSize()
                 .pointerInput(Unit) {
                     detectTapGestures(onTap = {
-                        player.playWhenReady = !player.playWhenReady
-                        onControlsVisibleChange(true)
+                        onControlsVisibleChange(!controlsVisible)
                     })
                 }
         ) { page ->
@@ -150,7 +171,6 @@ fun VideoDetailHorizontalPager(
                     thumbnailBitmap = thumbnailBitmap,
                     player = player,
                     isCurrentPage = horizontalPagerState.currentPage == page,
-                    controlsVisible = controlsVisible,
                     progress = progress
                 )
             } else {
@@ -158,21 +178,33 @@ fun VideoDetailHorizontalPager(
             }
         }
 
-        if (controlsVisible) {
-            PagerIndicator(
-                currentPage = horizontalPagerState.currentPage,
-                pageCount = videoItems.size,
-                modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .padding(bottom = 16.dp)
-            )
-
-            val currentVideoItem = videoItems.getOrNull(horizontalPagerState.currentPage)
-            if (currentVideoItem != null) {
-                VideoDetailActionButtons(
-                    videoItem = currentVideoItem,
-                    modifier = Modifier.align(Alignment.BottomEnd)
+        AnimatedVisibility(
+            visible = controlsVisible,
+            enter = fadeIn(animationSpec = tween(150)),
+            exit = fadeOut(animationSpec = tween(150)),
+        ) {
+            Box(modifier = Modifier.fillMaxSize()) {
+                PlayPauseIcon(
+                    isPlaying = isPlaying,
+                    onTogglePlay = { player.playWhenReady = !player.playWhenReady },
+                    modifier = Modifier.align(Alignment.Center)
                 )
+
+                PagerIndicator(
+                    currentPage = horizontalPagerState.currentPage,
+                    pageCount = videoItems.size,
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .padding(bottom = 16.dp)
+                )
+
+                val currentVideoItem = videoItems.getOrNull(horizontalPagerState.currentPage)
+                if (currentVideoItem != null) {
+                    VideoDetailActionButtons(
+                        videoItem = currentVideoItem,
+                        modifier = Modifier.align(Alignment.BottomEnd)
+                    )
+                }
             }
         }
     }

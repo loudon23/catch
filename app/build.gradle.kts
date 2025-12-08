@@ -66,6 +66,7 @@ dependencies {
 
     // Accompanist
     implementation("com.google.accompanist:accompanist-permissions:0.34.0")
+    implementation("com.google.accompanist:accompanist-systemuicontroller:0.34.0")
 
     // ViewModel-Compose
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.0")

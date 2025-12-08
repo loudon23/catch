@@ -1,6 +1,5 @@
 package com.loudon23.acatch.ui.video.detail
 
-import android.app.Activity
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -10,7 +9,6 @@ import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -19,10 +17,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalView
-import androidx.core.view.WindowInsetsCompat
-import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import com.loudon23.acatch.ui.video.VideoViewModel
 
 @OptIn(ExperimentalFoundationApi::class)
@@ -35,27 +31,21 @@ fun VideoDetailScreen(
 ) {
     val folderItems by videoViewModel.folderListState.collectAsState()
     var controlsVisible by remember { mutableStateOf(false) }
-    val view = LocalView.current
+    val systemUiController = rememberSystemUiController()
 
-    // Hide/Show System Bars based on controlsVisible state
-    LaunchedEffect(controlsVisible) {
-        val window = (view.context as? Activity)?.window ?: return@LaunchedEffect
-        val insetsController = WindowInsetsControllerCompat(window, view)
-        if (controlsVisible) {
-            insetsController.show(WindowInsetsCompat.Type.systemBars())
-        } else {
-            insetsController.systemBarsBehavior =
-                WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
-            insetsController.hide(WindowInsetsCompat.Type.systemBars())
-        }
-    }
+    DisposableEffect(systemUiController) {
+        // Set the navigation bar to be transparent
+        systemUiController.setSystemBarsColor(
+            color = Color.Transparent,
+            darkIcons = false
+        )
 
-    DisposableEffect(Unit) {
         onDispose {
-            // Ensure system bars are shown when leaving the screen
-            (view.context as? Activity)?.window?.let { window ->
-                WindowInsetsControllerCompat(window, view).show(WindowInsetsCompat.Type.systemBars())
-            }
+            // Restore the original system bar color
+            systemUiController.setSystemBarsColor(
+                color = Color.Black,
+                darkIcons = false
+            )
         }
     }
 
