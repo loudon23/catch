@@ -24,12 +24,13 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect // Add this import
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.LaunchedEffect // Add this import
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
@@ -146,117 +147,116 @@ fun FolderListScreen(
         onClearAllData = { videoViewModel.clearAllData() }
     ) { // content lambda starts here
         Scaffold(
-            // TopAppBar가 제거되었으므로 topBar 파라미터도 제거합니다.
+            containerColor = Color.Transparent
         ) { paddingValues ->
             if (videoPermissionState.status.isGranted) {
-                LazyVerticalGrid(
-                    columns = GridCells.Fixed(2),
-                    state = lazyGridState, // Pass the lazyGridState
-                    modifier = Modifier.padding(paddingValues),
-                    verticalArrangement = Arrangement.spacedBy(2.dp),
-                    horizontalArrangement = Arrangement.spacedBy(2.dp)
-                ) {
-                    if (isLoading) {
-                        items(4) { // Show 4 skeletons while loading
-                            FolderListItemSkeleton()
-                        }
+                if (folderItems.isEmpty() && !isLoading) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(paddingValues),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text("폴더가 없습니다. 새 폴더를 추가해주세요.")
                     }
-                    else if (folderItems.isEmpty()) {
-                        item { // Use item scope for single element
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .padding(paddingValues),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text("폴더가 없습니다. 새 폴더를 추가해주세요.")
+                } else {
+                    LazyVerticalGrid(
+                        columns = GridCells.Fixed(2),
+                        state = lazyGridState, // Pass the lazyGridState
+                        modifier = Modifier.fillMaxSize(),
+                        contentPadding = paddingValues,
+                        verticalArrangement = Arrangement.spacedBy(2.dp),
+                        horizontalArrangement = Arrangement.spacedBy(2.dp)
+                    ) {
+                        if (isLoading) {
+                            items(4) { // Show 4 skeletons while loading
+                                FolderListItemSkeleton()
                             }
-                        }
-                    }
-                    else {
-                        itemsIndexed(
-                            folderItems,
-                            key = { _, folderItem -> folderItem.uri }) { _, folderItem ->
-                            val folderThumbnailBitmap = folderItem.thumbnailVideoUri?.let { uri ->
-                                thumbnails[uri]
-                            }
+                        } else {
+                            itemsIndexed(
+                                folderItems,
+                                key = { _, folderItem -> folderItem.uri }) { _, folderItem ->
+                                val folderThumbnailBitmap = folderItem.thumbnailVideoUri?.let { uri ->
+                                    thumbnails[uri]
+                                }
 
-                            val isPlayingThisFolder = currentlyPlayingFolderUri == folderItem.uri && folderItem.thumbnailVideoUri != null
+                                val isPlayingThisFolder = currentlyPlayingFolderUri == folderItem.uri && folderItem.thumbnailVideoUri != null
 
-                            Log.d("FolderListItem", "Folder: ${folderItem.name}, isPlaying: $isPlayingThisFolder")
+                                Log.d("FolderListItem", "Folder: ${folderItem.name}, isPlaying: $isPlayingThisFolder")
 
-                            FolderListItemComposable(
-                                folder = folderItem,
-                                thumbnailBitmap = folderThumbnailBitmap,
-                                onFolderClick = {
-                                    scope.launch {
-                                        val videosInFolder =
-                                            videoViewModel.getVideosForFolder(it).firstOrNull()
-                                        if (!videosInFolder.isNullOrEmpty()) {
-                                            // Navigate to detail screen when folder is clicked
-                                            onNavigateToDetail(
-                                                folderItem.uri,
-                                                videosInFolder.first().uri,
-                                                0
+                                FolderListItemComposable(
+                                    folder = folderItem,
+                                    thumbnailBitmap = folderThumbnailBitmap,
+                                    onFolderClick = {
+                                        scope.launch {
+                                            val videosInFolder =
+                                                videoViewModel.getVideosForFolder(it).firstOrNull()
+                                            if (!videosInFolder.isNullOrEmpty()) {
+                                                // Navigate to detail screen when folder is clicked
+                                                onNavigateToDetail(
+                                                    folderItem.uri,
+                                                    videosInFolder.first().uri,
+                                                    0
+                                                )
+                                            } else {
+                                                Toast.makeText(
+                                                    context,
+                                                    "이 폴더에는 비디오가 없습니다.",
+                                                    Toast.LENGTH_SHORT
+                                                ).show()
+                                            }
+                                        }
+                                    },
+                                    onDeleteFolder = {
+                                        videoViewModel.deleteFolder(it)
+                                        // If the deleted folder was playing, stop playback
+                                        if (currentlyPlayingFolderUri == it.uri) {
+                                            videoViewModel.setCurrentlyPlayingFolder(null)
+                                        }
+                                    },
+                                    onOpenFolder = {
+                                        val folderUri = it.uri.toUri()
+                                        val documentUri = DocumentsContract.buildDocumentUriUsingTree(
+                                            folderUri,
+                                            DocumentsContract.getTreeDocumentId(folderUri)
+                                        )
+
+                                        val intent = Intent(Intent.ACTION_VIEW).apply {
+                                            setDataAndType(
+                                                documentUri,
+                                                "vnd.android.document/directory"
                                             )
-                                        } else {
+                                            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                                            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                            setPackage("pl.solidexplorer2")
+                                        }
+                                        try {
+                                            context.startActivity(intent)
+                                        } catch (_: ActivityNotFoundException) {
                                             Toast.makeText(
                                                 context,
-                                                "이 폴더에는 비디오가 없습니다.",
+                                                "폴더를 열 수 있는 앱을 찾을 수 없습니다.",
                                                 Toast.LENGTH_SHORT
                                             ).show()
                                         }
-                                    }
-                                },
-                                onDeleteFolder = {
-                                    videoViewModel.deleteFolder(it)
-                                    // If the deleted folder was playing, stop playback
-                                    if (currentlyPlayingFolderUri == it.uri) {
-                                        videoViewModel.setCurrentlyPlayingFolder(null)
-                                    }
-                                },
-                                onOpenFolder = {
-                                    val folderUri = it.uri.toUri()
-                                    val documentUri = DocumentsContract.buildDocumentUriUsingTree(
-                                        folderUri,
-                                        DocumentsContract.getTreeDocumentId(folderUri)
-                                    )
-
-                                    val intent = Intent(Intent.ACTION_VIEW).apply {
-                                        setDataAndType(
-                                            documentUri,
-                                            "vnd.android.document/directory"
-                                        )
-                                        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                                        setPackage("pl.solidexplorer2")
-                                    }
-                                    try {
-                                        context.startActivity(intent)
-                                    } catch (_: ActivityNotFoundException) {
-                                        Toast.makeText(
-                                            context,
-                                            "폴더를 열 수 있는 앱을 찾을 수 없습니다.",
-                                            Toast.LENGTH_SHORT
-                                        ).show()
-                                    }
-                                },
-                                onRefreshFolder = {
-                                    videoViewModel.refreshFolder(it)
-                                },
-                                // Pass the new parameters
-                                player = videoViewModel.player,
-                                onPlayVideo = { videoUri -> videoViewModel.playVideo(videoUri) },
-                                onStopPlayback = { videoViewModel.stopPlayback() },
-                                isPlaying = isPlayingThisFolder
-                            )
+                                    },
+                                    onRefreshFolder = {
+                                        videoViewModel.refreshFolder(it)
+                                    },
+                                    // Pass the new parameters
+                                    player = videoViewModel.player,
+                                    onPlayVideo = { videoUri -> videoViewModel.playVideo(videoUri) },
+                                    onStopPlayback = { videoViewModel.stopPlayback() },
+                                    isPlaying = isPlayingThisFolder
+                                )
+                            }
                         }
                     }
                 }
             }
             else {
                 Column(
-                    modifier = Modifier.fillMaxSize(),
+                    modifier = Modifier.fillMaxSize().padding(paddingValues),
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Center
                 ) {
