@@ -3,6 +3,7 @@ package com.loudon23.acatch.ui.video.list
 import android.graphics.Bitmap
 import android.net.Uri
 import android.view.HapticFeedbackConstants
+import androidx.annotation.OptIn
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -42,13 +43,15 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.net.toUri
 import androidx.media3.common.Player
+import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.ui.AspectRatioFrameLayout
 import com.loudon23.acatch.data.FolderItem
+import com.loudon23.acatch.ui.common.CommonVideoPlayerView
 
+@OptIn(UnstableApi::class)
 @Composable
 fun FolderListItemComposable(
     folder: FolderItem,
@@ -120,18 +123,7 @@ fun FolderListItemComposable(
     ) {
         // Layer 1: Video Player (background)
         if (isPlaying && folder.thumbnailVideoUri != null) {
-            AndroidView(
-                modifier = Modifier.fillMaxSize(),
-                factory = { ctx ->
-                    androidx.media3.ui.PlayerView(ctx).apply {
-                        useController = false
-                        resizeMode = AspectRatioFrameLayout.RESIZE_MODE_ZOOM // Equivalent to ContentScale.Crop
-                    }
-                },
-                update = { playerView ->
-                    playerView.player = if (isPlaying) player else null
-                }
-            )
+            CommonVideoPlayerView(player = player, isPlaying = isPlaying, resizeMode = AspectRatioFrameLayout.RESIZE_MODE_ZOOM)
         }
 
         // Layer 2: Thumbnail or fallback icon (foreground overlay)

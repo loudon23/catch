@@ -15,11 +15,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
-import androidx.compose.ui.viewinterop.AndroidView
 import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
-import androidx.media3.ui.PlayerView
 import com.loudon23.acatch.data.VideoItem
+import com.loudon23.acatch.ui.common.CommonVideoPlayerView
 
 @Composable
 fun VideoDetailPlayer(
@@ -49,17 +48,7 @@ fun VideoDetailPlayer(
             .background(Color.Black),
         contentAlignment = Alignment.Center
     ) {
-        AndroidView(
-            modifier = Modifier.fillMaxSize(),
-            factory = { ctx ->
-                PlayerView(ctx).apply {
-                    useController = false
-                }
-            },
-            update = { playerView ->
-                playerView.player = if (isCurrentPage) player else null
-            }
-        )
+        CommonVideoPlayerView(player = player, isPlaying = isCurrentPage)
 
         if (thumbnailBitmap != null && (!isCurrentPage || playbackState != Player.STATE_READY)) {
             Image(
