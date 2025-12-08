@@ -77,65 +77,167 @@ fun FolderListScreen(
     val lazyGridState = rememberLazyGridState()
 
     // --- Auto Playback Logic --- //
-    LaunchedEffect(folderItems, lazyGridState.firstVisibleItemIndex, currentlyPlayingFolderUri) {
-        if (isLoading || folderItems.isEmpty()) return@LaunchedEffect
 
-        val firstVisibleItem = lazyGridState.layoutInfo.visibleItemsInfo.firstOrNull()?.index
-        Log.d("AutoPlayback", "First visible item index: $firstVisibleItem, currentlyPlayingFolderUri: $currentlyPlayingFolderUri")
-
-        // If no video is currently playing, start playing the first visible item's thumbnail video
-        if (currentlyPlayingFolderUri == null && firstVisibleItem != null) {
-            val firstFolder = folderItems.getOrNull(firstVisibleItem)
-            if (firstFolder != null && firstFolder.thumbnailVideoUri != null) {
-                Log.d("AutoPlayback", "Starting initial playback for: ${firstFolder.name}")
-                videoViewModel.setCurrentlyPlayingFolder(firstFolder.uri)
-            } else if (firstFolder != null && firstFolder.thumbnailVideoUri == null) {
-                // If first visible has no thumbnail, try to find the next one
-                Log.d("AutoPlayback", "First visible folder has no thumbnail, looking for next playable.")
-                val nextPlayable = folderItems.drop(firstVisibleItem).firstOrNull { it.thumbnailVideoUri != null }
-                if (nextPlayable != null) {
-                    videoViewModel.setCurrentlyPlayingFolder(nextPlayable.uri)
-                } else {
-                    videoViewModel.setCurrentlyPlayingFolder(null)
-                }
-            } else {
-                videoViewModel.setCurrentlyPlayingFolder(null) // Ensure nothing plays if no valid first item
-            }
-        }
-
-        // Update player when currentlyPlayingFolderUri changes
+    // 1. Reacts to changes in the currently playing folder URI to start/stop the player
+    LaunchedEffect(currentlyPlayingFolderUri) {
         currentlyPlayingFolderUri?.let { uri ->
-            Log.d("AutoPlayback", "currentlyPlayingFolderUri changed to: $uri, calling playVideo.")
+            Log.d("AutoPlayback", "Playback target changed to: $uri, calling playVideo.")
             videoViewModel.playVideo(uri)
         } ?: run {
-            Log.d("AutoPlayback", "currentlyPlayingFolderUri is null, calling stopPlayback.")
+            Log.d("AutoPlayback", "Playback target is null, calling stopPlayback.")
             videoViewModel.stopPlayback()
         }
     }
 
-    LaunchedEffect(videoViewModel.playbackEnded) {
-        videoViewModel.playbackEnded.collectLatest { 
-            Log.d("AutoPlayback", "Playback ended event received. currentlyPlayingFolderUri: $currentlyPlayingFolderUri")
-            // Find the current playing folder and then the next visible one
-            val currentPlayingIndex = folderItems.indexOfFirst { it.uri == currentlyPlayingFolderUri }
-            if (currentPlayingIndex != -1) {
-                val nextPlayableIndex = (currentPlayingIndex + 1 until folderItems.size).firstOrNull { index ->
-                    val folder = folderItems[index]
-                    folder.thumbnailVideoUri != null
-                    // Removed: && lazyGridState.layoutInfo.visibleItemsInfo.any { it.index == index } // Only consider visible items
-                }
+    // 2. Determines which video to play based on scroll state and visibility
+    LaunchedEffect(folderItems, lazyGridState.isScrollInProgress) {
+        // Run only when scrolling has stopped
+        if (lazyGridState.isScrollInProgress) return@LaunchedEffect
 
-                if (nextPlayableIndex != null) {
-                    val nextFolder = folderItems[nextPlayableIndex]
-                    Log.d("AutoPlayback", "Playing next folder: ${nextFolder.name}")
-                    videoViewModel.setCurrentlyPlayingFolder(nextFolder.uri)
-                } else {
-                    Log.d("AutoPlayback", "No next playable folder found. Stopping playback.")
-                    videoViewModel.setCurrentlyPlayingFolder(null)
-                }
-            } else {
-                Log.d("AutoPlayback", "Currently playing folder not found in list. Stopping playback.")
+        if (isLoading || folderItems.isEmpty()) {
+            if (currentlyPlayingFolderUri != null) {
                 videoViewModel.setCurrentlyPlayingFolder(null)
+            }
+            return@LaunchedEffect
+        }
+
+        val visibleItemsInfo = lazyGridState.layoutInfo.visibleItemsInfo
+        val viewportHeight = lazyGridState.layoutInfo.viewportSize.height
+
+        if (visibleItemsInfo.isEmpty()) {
+            if (currentlyPlayingFolderUri != null) {
+                videoViewModel.setCurrentlyPlayingFolder(null)
+            }
+            return@LaunchedEffect
+        }
+
+        // Find the info for the currently playing item, if it's visible
+        val currentPlayingItemInfo = currentlyPlayingFolderUri?.let { playingUri ->
+            folderItems.indexOfFirst { it.uri == playingUri }
+                .takeIf { it != -1 }
+                ?.let { index -> visibleItemsInfo.find { it.index == index } }
+        }
+
+        var shouldPlayNewItem = false
+        if (currentPlayingItemInfo == null) {
+            // Case 1: The currently playing item is not in the viewport, or nothing is playing.
+            shouldPlayNewItem = true
+        } else {
+            // Case 2: The currently playing item is in the viewport. Check its visibility.
+            val itemTop = currentPlayingItemInfo.offset.y
+            val itemHeight = currentPlayingItemInfo.size.height
+
+            // An item's height can be 0 in some edge cases during composition.
+            if (itemHeight > 0) {
+                // Calculate the visible height of the item
+                val visibleTop = itemTop.coerceAtLeast(0)
+                val visibleBottom = (itemTop + itemHeight).coerceAtMost(viewportHeight)
+                val visibleHeight = visibleBottom - visibleTop
+
+                // Check if less than half is visible
+                if ((visibleHeight.toFloat() / itemHeight) < 0.5f) {
+                    shouldPlayNewItem = true
+                }
+            }
+        }
+
+        // If we need to play a new item, find the best candidate.
+        if (shouldPlayNewItem) {
+            // Priority 1: Find the first fully visible item with a video.
+            var newFolderToPlay = visibleItemsInfo
+                .asSequence()
+                .filter { it.offset.y >= 0 && (it.offset.y + it.size.height) <= viewportHeight }
+                .sortedBy { it.index }
+                .mapNotNull { folderItems.getOrNull(it.index) }
+                .firstOrNull { it.thumbnailVideoUri != null }
+
+            // Priority 2: If none are fully visible, find the most visible item.
+            if (newFolderToPlay == null) {
+                newFolderToPlay = visibleItemsInfo
+                    .asSequence()
+                    .mapNotNull { itemInfo ->
+                        val folder = folderItems.getOrNull(itemInfo.index)
+                        if (folder?.thumbnailVideoUri == null) {
+                            null
+                        } else {
+                            val itemTop = itemInfo.offset.y
+                            val itemHeight = itemInfo.size.height
+                            if (itemHeight <= 0) {
+                                null
+                            } else {
+                                val visibleTop = itemTop.coerceAtLeast(0)
+                                val visibleBottom = (itemTop + itemHeight).coerceAtMost(viewportHeight)
+                                val visibleHeight = visibleBottom - visibleTop
+                                val visibility = visibleHeight.toFloat() / itemHeight
+                                folder to visibility
+                            }
+                        }
+                    }
+                    .maxByOrNull { it.second }
+                    ?.first
+            }
+
+            // Only update if the new target is different from the current one to avoid re-seeking.
+            if (newFolderToPlay?.uri != currentlyPlayingFolderUri) {
+                videoViewModel.setCurrentlyPlayingFolder(newFolderToPlay?.uri)
+            }
+        }
+    }
+
+    LaunchedEffect(videoViewModel.playbackEnded) {
+        videoViewModel.playbackEnded.collectLatest {
+            Log.d("AutoPlayback", "Playback ended event received. URI: $currentlyPlayingFolderUri")
+
+            // 1. Get current layout info
+            val visibleItemsInfo = lazyGridState.layoutInfo.visibleItemsInfo
+            val viewportHeight = lazyGridState.layoutInfo.viewportSize.height
+            if (visibleItemsInfo.isEmpty()) {
+                videoViewModel.setCurrentlyPlayingFolder(null)
+                return@collectLatest
+            }
+
+            // 2. Determine the pool of candidate folders for playback.
+            // Priority is given to fully visible folders.
+            val fullyVisibleFolders = visibleItemsInfo
+                .asSequence()
+                .filter { it.offset.y >= 0 && (it.offset.y + it.size.height) <= viewportHeight }
+                .sortedBy { it.index }
+                .mapNotNull { folderItems.getOrNull(it.index) }
+                .filter { it.thumbnailVideoUri != null }
+                .toList()
+
+            val candidatePool = fullyVisibleFolders.ifEmpty {
+                // Fallback: If no folders are fully visible, consider all visible folders.
+                visibleItemsInfo
+                    .asSequence()
+                    .sortedBy { it.index }
+                    .mapNotNull { folderItems.getOrNull(it.index) }
+                    .filter { it.thumbnailVideoUri != null }
+                    .toList()
+            }
+
+            if (candidatePool.isEmpty()) {
+                videoViewModel.setCurrentlyPlayingFolder(null) // Nothing to play
+                return@collectLatest
+            }
+
+            // 3. Find the next folder to play from the candidate pool.
+            val currentCandidateIndex = candidatePool.indexOfFirst { it.uri == currentlyPlayingFolderUri }
+
+            val nextFolder = if (currentCandidateIndex != -1 && currentCandidateIndex < candidatePool.size - 1) {
+                // If the finished item is in the pool and not the last one, play the next one.
+                candidatePool[currentCandidateIndex + 1]
+            } else {
+                // Otherwise, loop back to the first item in the pool.
+                candidatePool.first()
+            }
+
+            // 4. Set the new playback target.
+            // Avoid re-setting if it's the same, unless it's the only item in the pool (to allow replaying)
+            if (nextFolder.uri != currentlyPlayingFolderUri) {
+                videoViewModel.setCurrentlyPlayingFolder(nextFolder.uri)
+            } else if (candidatePool.size == 1) {
+                videoViewModel.playVideo(nextFolder.uri) // Re-play the single item
             }
         }
     }
@@ -243,7 +345,10 @@ fun FolderListScreen(
                                     onRefreshFolder = {
                                         videoViewModel.refreshFolder(it)
                                     },
-                                    // Pass the new parameters
+                                    // Add the new onPlayIconClick lambda here
+                                    onPlayIconClick = {
+                                        videoViewModel.setCurrentlyPlayingFolder(folderItem.uri)
+                                    },
                                     player = videoViewModel.player,
                                     onPlayVideo = { videoUri -> videoViewModel.playVideo(videoUri) },
                                     onStopPlayback = { videoViewModel.stopPlayback() },

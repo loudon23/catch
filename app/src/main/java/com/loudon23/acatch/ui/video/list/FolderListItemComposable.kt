@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Folder
@@ -22,6 +21,7 @@ import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -58,7 +58,8 @@ fun FolderListItemComposable(
     player: ExoPlayer,
     onPlayVideo: (String) -> Unit,
     onStopPlayback: () -> Unit,
-    isPlaying: Boolean
+    isPlaying: Boolean,
+    onPlayIconClick: () -> Unit
 ) {
     val view = LocalView.current
     var showContextMenu by remember { mutableStateOf(false) }
@@ -115,18 +116,16 @@ fun FolderListItemComposable(
             )
             Box(
                 modifier = Modifier
-                    .fillMaxSize()
-                    .padding(8.dp),
+                    .fillMaxSize(),
                 contentAlignment = Alignment.BottomStart
             ) {
-                Icon(
-                    imageVector = Icons.Filled.PlayArrow,
-                    contentDescription = "Play Icon",
-                    tint = Color.White,
-                    modifier = Modifier
-                        .size(24.dp)
-                        .align(Alignment.BottomStart)
-                )
+                IconButton(onClick = onPlayIconClick, modifier = Modifier.padding(0.dp)) {
+                    Icon(
+                        imageVector = Icons.Filled.PlayArrow,
+                        contentDescription = "Play Icon",
+                        tint = Color.White
+                    )
+                }
             }
         } else {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
