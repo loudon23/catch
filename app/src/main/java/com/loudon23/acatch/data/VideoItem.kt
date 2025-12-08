@@ -1,9 +1,9 @@
 package com.loudon23.acatch.data
 
 import androidx.room.Entity
-import androidx.room.PrimaryKey
 import androidx.room.ForeignKey
-import androidx.room.ForeignKey.Companion.CASCADE
+import androidx.room.Index
+import androidx.room.PrimaryKey
 
 @Entity(
     tableName = "videos",
@@ -12,9 +12,10 @@ import androidx.room.ForeignKey.Companion.CASCADE
             entity = FolderItem::class,
             parentColumns = ["uri"],
             childColumns = ["folderUri"],
-            onDelete = CASCADE
+            onDelete = ForeignKey.CASCADE
         )
-    ]
+    ],
+    indices = [Index(value = ["folderUri"])]
 )
 data class VideoItem(
     @PrimaryKey
