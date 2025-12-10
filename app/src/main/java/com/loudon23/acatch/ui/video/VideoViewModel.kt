@@ -4,6 +4,7 @@ import android.app.Application
 import android.content.Intent
 import android.graphics.Bitmap
 import android.net.Uri
+import androidx.core.net.toUri
 import androidx.documentfile.provider.DocumentFile
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
@@ -11,9 +12,10 @@ import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
 import com.loudon23.acatch.data.AppDatabase
+import com.loudon23.acatch.data.VideoRepository
+import com.loudon23.acatch.data.dao.FolderWithVideoCount
 import com.loudon23.acatch.data.item.FolderItem
 import com.loudon23.acatch.data.item.VideoItem
-import com.loudon23.acatch.data.VideoRepository
 import com.loudon23.acatch.utils.ThumbnailExtractor
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
@@ -23,13 +25,11 @@ import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import androidx.core.net.toUri
 
 class VideoViewModel(application: Application) : AndroidViewModel(application) {
 
@@ -38,7 +38,7 @@ class VideoViewModel(application: Application) : AndroidViewModel(application) {
     val thumbnails: StateFlow<Map<String, Bitmap>> = _thumbnails
 
     val videoListState: StateFlow<List<VideoItem>>
-    val folderListState: StateFlow<List<FolderItem>>
+    val folderListState: StateFlow<List<FolderWithVideoCount>>
 
     private val _currentFolderUri: MutableStateFlow<Uri?> = MutableStateFlow(null)
     private val _currentlyPlayingFolderUri: MutableStateFlow<String?> = MutableStateFlow(null)
@@ -70,12 +70,6 @@ class VideoViewModel(application: Application) : AndroidViewModel(application) {
         }
 
         folderListState = repository.allFolders
-            .combine(repository.allVideos) { folders, videos ->
-                val videoCounts = videos.groupBy { it.folderUri }.mapValues { it.value.size }
-                folders.map { folder ->
-                    folder.copy(videoCount = videoCounts[folder.uri] ?: 0)
-                }
-            }
             .stateIn(
                 scope = viewModelScope,
                 started = SharingStarted.WhileSubscribed(5_000),
@@ -169,10 +163,10 @@ class VideoViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    fun refreshFolder(folder: FolderItem) {
+    fun refreshFolder(folderWithVideoCount: FolderWithVideoCount) {
         viewModelScope.launch {
-            repository.deleteVideosByFolderUri(folder.uri)
-            scanVideosFromUri(folder.uri.toUri())
+            repository.deleteVideosByFolderUri(folderWithVideoCount.folder.uri)
+            scanVideosFromUri(folderWithVideoCount.folder.uri.toUri())
         }
     }
 
@@ -219,9 +213,9 @@ class VideoViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    fun deleteFolder(folder: FolderItem) {
+    fun deleteFolder(folderWithVideoCount: FolderWithVideoCount) {
         viewModelScope.launch {
-            repository.deleteFolder(folder)
+            repository.deleteFolder(folderWithVideoCount.folder)
         }
     }
 
@@ -237,6 +231,12 @@ class VideoViewModel(application: Application) : AndroidViewModel(application) {
     fun getVideosForFolder(folderUri: Uri): Flow<List<VideoItem>> {
         return repository.allVideos.map {
             it.filter { video -> video.folderUri == folderUri.toString() }
+        }
+    }
+
+    fun setFolderCover(folderUri: String, videoUri: String) {
+        viewModelScope.launch {
+            repository.setFolderThumbnail(folderUri, videoUri)
         }
     }
 }

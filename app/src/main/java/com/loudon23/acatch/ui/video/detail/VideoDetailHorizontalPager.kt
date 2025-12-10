@@ -157,6 +157,7 @@ fun VideoDetailHorizontalPager(
                 if (currentVideoItem != null) {
                     VideoDetailActionButtons(
                         videoItem = currentVideoItem,
+                        viewModel = videoViewModel,
                         modifier = Modifier.align(Alignment.BottomEnd)
                     )
                 }

@@ -1,7 +1,6 @@
 package com.loudon23.acatch.ui.video.list
 
 import android.graphics.Bitmap
-import android.net.Uri
 import android.view.HapticFeedbackConstants
 import androidx.annotation.OptIn
 import androidx.compose.foundation.Image
@@ -43,23 +42,22 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
-import androidx.core.net.toUri
 import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.ui.AspectRatioFrameLayout
-import com.loudon23.acatch.data.item.FolderItem
+import com.loudon23.acatch.data.dao.FolderWithVideoCount
 import com.loudon23.acatch.ui.common.CommonVideoPlayerView
 
 @OptIn(UnstableApi::class)
 @Composable
 fun FolderListItemComposable(
-    folder: FolderItem,
+    folderWithVideoCount: FolderWithVideoCount,
     thumbnailBitmap: Bitmap?,
-    onFolderClick: (Uri) -> Unit,
-    onDeleteFolder: (FolderItem) -> Unit,
-    onOpenFolder: (FolderItem) -> Unit,
-    onRefreshFolder: (FolderItem) -> Unit,
+    onFolderClick: (FolderWithVideoCount) -> Unit,
+    onDeleteFolder: (FolderWithVideoCount) -> Unit,
+    onOpenFolder: (FolderWithVideoCount) -> Unit,
+    onRefreshFolder: (FolderWithVideoCount) -> Unit,
     player: ExoPlayer,
     onPlayVideo: (String) -> Unit,
     onStopPlayback: () -> Unit,
@@ -71,6 +69,8 @@ fun FolderListItemComposable(
     var pressOffset by remember { mutableStateOf(DpOffset.Zero) }
     val density = LocalDensity.current
     var isVideoRendered by remember { mutableStateOf(false) }
+
+    val folder = folderWithVideoCount.folder
 
     // This effect handles playing the video and resetting the rendered state
     LaunchedEffect(isPlaying, folder.thumbnailVideoUri) {
@@ -108,7 +108,7 @@ fun FolderListItemComposable(
             .pointerInput(folder) {
                 detectTapGestures(
                     onTap = {
-                        onFolderClick(folder.uri.toUri())
+                        onFolderClick(folderWithVideoCount)
                     },
                     onLongPress = { offset ->
                         view.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
@@ -169,7 +169,7 @@ fun FolderListItemComposable(
             contentAlignment = Alignment.BottomEnd
         ) {
             Text(
-                text = folder.videoCount.toString(),
+                text = folderWithVideoCount.videoCount.toString(),
                 color = Color.White,
                 style = MaterialTheme.typography.labelSmall,
                 modifier = Modifier
@@ -186,7 +186,7 @@ fun FolderListItemComposable(
             DropdownMenuItem(
                 text = { Text("Refresh") },
                 onClick = {
-                    onRefreshFolder(folder)
+                    onRefreshFolder(folderWithVideoCount)
                     showContextMenu = false
                 },
                 leadingIcon = {
@@ -199,7 +199,7 @@ fun FolderListItemComposable(
             DropdownMenuItem(
                 text = { Text("Delete") },
                 onClick = {
-                    onDeleteFolder(folder)
+                    onDeleteFolder(folderWithVideoCount)
                     showContextMenu = false
                 },
                 leadingIcon = {
@@ -212,7 +212,7 @@ fun FolderListItemComposable(
             DropdownMenuItem(
                 text = { Text("Open Explorer") },
                 onClick = {
-                    onOpenFolder(folder)
+                    onOpenFolder(folderWithVideoCount)
                     showContextMenu = false
                 },
                 leadingIcon = {

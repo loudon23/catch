@@ -27,10 +27,10 @@ fun VideoDetailScreen(
     videoIndex: Int?,
     videoViewModel: VideoViewModel = viewModel(),
 ) {
-    val folderItems by videoViewModel.folderListState.collectAsState()
+    val folderItemsWithCount by videoViewModel.folderListState.collectAsState()
     var controlsVisible by remember { mutableStateOf(false) }
 
-    if (folderItems.isEmpty()) {
+    if (folderItemsWithCount.isEmpty()) {
         Box(
             modifier = Modifier
                 .fillMaxSize()
@@ -42,13 +42,13 @@ fun VideoDetailScreen(
         return
     }
 
-    val initialFolderIndex = remember(folderItems, folderUri) {
-        folderItems.indexOfFirst { it.uri == folderUri }.coerceAtLeast(0)
+    val initialFolderIndex = remember(folderItemsWithCount, folderUri) {
+        folderItemsWithCount.indexOfFirst { it.folder.uri == folderUri }.coerceAtLeast(0)
     }
 
     val verticalPagerState = rememberPagerState(
         initialPage = initialFolderIndex,
-        pageCount = { folderItems.size }
+        pageCount = { folderItemsWithCount.size }
     )
 
     VerticalPager(
@@ -57,7 +57,8 @@ fun VideoDetailScreen(
             .fillMaxSize()
             .background(Color.Black)
     ) { folderIndex ->
-        val currentFolder = folderItems[folderIndex]
+        val currentFolderWithCount = folderItemsWithCount[folderIndex]
+        val currentFolder = currentFolderWithCount.folder
 
         val isInitialFolder = currentFolder.uri == folderUri
         val initialVideoForThisPage = if (isInitialFolder) videoUri else null

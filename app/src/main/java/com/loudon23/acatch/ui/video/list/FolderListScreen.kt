@@ -38,6 +38,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberPermissionState
+import com.loudon23.acatch.data.dao.FolderWithVideoCount
 import com.loudon23.acatch.ui.video.VideoViewModel
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.firstOrNull
@@ -113,7 +114,7 @@ fun FolderListScreen(
 
         // Find the info for the currently playing item, if it's visible
         val currentPlayingItemInfo = currentlyPlayingFolderUri?.let { playingUri ->
-            folderItems.indexOfFirst { it.uri == playingUri }
+            folderItems.indexOfFirst { it.folder.uri == playingUri }
                 .takeIf { it != -1 }
                 ?.let { index -> visibleItemsInfo.find { it.index == index } }
         }
@@ -149,15 +150,15 @@ fun FolderListScreen(
                 .filter { it.offset.y >= 0 && (it.offset.y + it.size.height) <= viewportHeight }
                 .sortedBy { it.index }
                 .mapNotNull { folderItems.getOrNull(it.index) }
-                .firstOrNull { it.thumbnailVideoUri != null }
+                .firstOrNull { it.folder.thumbnailVideoUri != null }
 
             // Priority 2: If none are fully visible, find the most visible item.
             if (newFolderToPlay == null) {
                 newFolderToPlay = visibleItemsInfo
                     .asSequence()
                     .mapNotNull { itemInfo ->
-                        val folder = folderItems.getOrNull(itemInfo.index)
-                        if (folder?.thumbnailVideoUri == null) {
+                        val folderWithCount = folderItems.getOrNull(itemInfo.index)
+                        if (folderWithCount?.folder?.thumbnailVideoUri == null) {
                             null
                         } else {
                             val itemTop = itemInfo.offset.y
@@ -169,7 +170,7 @@ fun FolderListScreen(
                                 val visibleBottom = (itemTop + itemHeight).coerceAtMost(viewportHeight)
                                 val visibleHeight = visibleBottom - visibleTop
                                 val visibility = visibleHeight.toFloat() / itemHeight
-                                folder to visibility
+                                folderWithCount to visibility
                             }
                         }
                     }
@@ -178,8 +179,8 @@ fun FolderListScreen(
             }
 
             // Only update if the new target is different from the current one to avoid re-seeking.
-            if (newFolderToPlay?.uri != currentlyPlayingFolderUri) {
-                videoViewModel.setCurrentlyPlayingFolder(newFolderToPlay?.uri)
+            if (newFolderToPlay?.folder?.uri != currentlyPlayingFolderUri) {
+                videoViewModel.setCurrentlyPlayingFolder(newFolderToPlay?.folder?.uri)
             }
         }
     }
@@ -203,7 +204,7 @@ fun FolderListScreen(
                 .filter { it.offset.y >= 0 && (it.offset.y + it.size.height) <= viewportHeight }
                 .sortedBy { it.index }
                 .mapNotNull { folderItems.getOrNull(it.index) }
-                .filter { it.thumbnailVideoUri != null }
+                .filter { it.folder.thumbnailVideoUri != null }
                 .toList()
 
             val candidatePool = fullyVisibleFolders.ifEmpty {
@@ -212,7 +213,7 @@ fun FolderListScreen(
                     .asSequence()
                     .sortedBy { it.index }
                     .mapNotNull { folderItems.getOrNull(it.index) }
-                    .filter { it.thumbnailVideoUri != null }
+                    .filter { it.folder.thumbnailVideoUri != null }
                     .toList()
             }
 
@@ -222,7 +223,7 @@ fun FolderListScreen(
             }
 
             // 3. Find the next folder to play from the candidate pool.
-            val currentCandidateIndex = candidatePool.indexOfFirst { it.uri == currentlyPlayingFolderUri }
+            val currentCandidateIndex = candidatePool.indexOfFirst { it.folder.uri == currentlyPlayingFolderUri }
 
             val nextFolder = if (currentCandidateIndex != -1 && currentCandidateIndex < candidatePool.size - 1) {
                 // If the finished item is in the pool and not the last one, play the next one.
@@ -234,10 +235,10 @@ fun FolderListScreen(
 
             // 4. Set the new playback target.
             // Avoid re-setting if it's the same, unless it's the only item in the pool (to allow replaying)
-            if (nextFolder.uri != currentlyPlayingFolderUri) {
-                videoViewModel.setCurrentlyPlayingFolder(nextFolder.uri)
+            if (nextFolder.folder.uri != currentlyPlayingFolderUri) {
+                videoViewModel.setCurrentlyPlayingFolder(nextFolder.folder.uri)
             } else if (candidatePool.size == 1) {
-                videoViewModel.playVideo(nextFolder.uri) // Re-play the single item
+                videoViewModel.playVideo(nextFolder.folder.uri!!) // Re-play the single item
             }
         }
     }
@@ -277,26 +278,26 @@ fun FolderListScreen(
                         } else {
                             itemsIndexed(
                                 folderItems,
-                                key = { _, folderItem -> folderItem.uri }) { _, folderItem ->
-                                val folderThumbnailBitmap = folderItem.thumbnailVideoUri?.let { uri ->
+                                key = { _, folderWithCount -> folderWithCount.folder.uri }) { _, folderWithCount ->
+                                val folderThumbnailBitmap = folderWithCount.folder.thumbnailVideoUri?.let { uri ->
                                     thumbnails[uri]
                                 }
 
-                                val isPlayingThisFolder = currentlyPlayingFolderUri == folderItem.uri && folderItem.thumbnailVideoUri != null
+                                val isPlayingThisFolder = currentlyPlayingFolderUri == folderWithCount.folder.uri && folderWithCount.folder.thumbnailVideoUri != null
 
-                                Log.d("FolderListItem", "Folder: ${folderItem.name}, isPlaying: $isPlayingThisFolder")
+                                Log.d("FolderListItem", "Folder: ${folderWithCount.folder.name}, isPlaying: $isPlayingThisFolder")
 
                                 FolderListItemComposable(
-                                    folder = folderItem,
+                                    folderWithVideoCount = folderWithCount,
                                     thumbnailBitmap = folderThumbnailBitmap,
                                     onFolderClick = {
                                         scope.launch {
                                             val videosInFolder =
-                                                videoViewModel.getVideosForFolder(it).firstOrNull()
+                                                videoViewModel.getVideosForFolder(it.folder.uri.toUri()).firstOrNull()
                                             if (!videosInFolder.isNullOrEmpty()) {
                                                 // Navigate to detail screen when folder is clicked
                                                 onNavigateToDetail(
-                                                    folderItem.uri,
+                                                    folderWithCount.folder.uri,
                                                     videosInFolder.first().uri,
                                                     0
                                                 )
@@ -312,12 +313,12 @@ fun FolderListScreen(
                                     onDeleteFolder = {
                                         videoViewModel.deleteFolder(it)
                                         // If the deleted folder was playing, stop playback
-                                        if (currentlyPlayingFolderUri == it.uri) {
+                                        if (currentlyPlayingFolderUri == it.folder.uri) {
                                             videoViewModel.setCurrentlyPlayingFolder(null)
                                         }
                                     },
                                     onOpenFolder = {
-                                        val folderUri = it.uri.toUri()
+                                        val folderUri = it.folder.uri.toUri()
                                         val documentUri = DocumentsContract.buildDocumentUriUsingTree(
                                             folderUri,
                                             DocumentsContract.getTreeDocumentId(folderUri)
@@ -347,7 +348,7 @@ fun FolderListScreen(
                                     },
                                     // Add the new onPlayIconClick lambda here
                                     onPlayIconClick = {
-                                        videoViewModel.setCurrentlyPlayingFolder(folderItem.uri)
+                                        videoViewModel.setCurrentlyPlayingFolder(folderWithCount.folder.uri)
                                     },
                                     player = videoViewModel.player,
                                     onPlayVideo = { videoUri -> videoViewModel.playVideo(videoUri) },

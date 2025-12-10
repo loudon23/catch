@@ -23,10 +23,12 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
 import com.loudon23.acatch.data.item.VideoItem
+import com.loudon23.acatch.ui.video.VideoViewModel
 
 @Composable
 fun VideoDetailActionButtons(
     videoItem: VideoItem,
+    viewModel: VideoViewModel,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -37,7 +39,7 @@ fun VideoDetailActionButtons(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         IconButton(
-            onClick = { /* TODO: 좋아요 기능 구현 */ },
+            onClick = { viewModel.setFolderCover(videoItem.folderUri, videoItem.uri) },
             modifier = Modifier.background(Color.Black.copy(alpha = 0.5f), CircleShape)
         ) {
             Icon(
