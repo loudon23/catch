@@ -39,7 +39,7 @@ fun VideoDetailActionButtons(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         IconButton(
-            onClick = { viewModel.setFolderCover(videoItem.folderUri, videoItem.uri) },
+            onClick = { viewModel.setFolderCover(videoItem.folderUri, videoItem.id) },
             modifier = Modifier.background(Color.Black.copy(alpha = 0.5f), CircleShape)
         ) {
             Icon(

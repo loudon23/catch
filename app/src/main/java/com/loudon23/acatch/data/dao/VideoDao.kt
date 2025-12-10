@@ -13,6 +13,9 @@ interface VideoDao {
     @Query("SELECT * FROM videos")
     fun getVideos(): Flow<List<VideoItem>>
 
+    @Query("SELECT * FROM videos WHERE folderUri = :folderUri ORDER BY id ASC LIMIT 1")
+    suspend fun getFirstVideoInFolder(folderUri: String): VideoItem?
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertVideos(videos: List<VideoItem>)
 

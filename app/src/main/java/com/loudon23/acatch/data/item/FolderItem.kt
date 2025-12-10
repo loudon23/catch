@@ -1,12 +1,25 @@
 package com.loudon23.acatch.data.item
 
 import androidx.room.Entity
+import androidx.room.ForeignKey
+import androidx.room.Index
 import androidx.room.PrimaryKey
 
-@Entity(tableName = "folders")
+@Entity(
+    tableName = "folders",
+    foreignKeys = [
+        ForeignKey(
+            entity = VideoItem::class,
+            parentColumns = ["id"],
+            childColumns = ["coverVideoId"],
+            onDelete = ForeignKey.SET_NULL
+        )
+    ],
+    indices = [Index(value = ["coverVideoId"])]
+)
 data class FolderItem(
     @PrimaryKey
     val uri: String,
     val name: String,
-    val thumbnailVideoUri: String? = null // Add this field for the representative video
+    val coverVideoId: Int? = null
 )

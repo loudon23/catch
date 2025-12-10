@@ -15,10 +15,11 @@ import androidx.room.PrimaryKey
             onDelete = ForeignKey.CASCADE
         )
     ],
-    indices = [Index(value = ["folderUri"])]
+    indices = [Index(value = ["folderUri"]), Index(value = ["uri"], unique = true)]
 )
 data class VideoItem(
-    @PrimaryKey
+    @PrimaryKey(autoGenerate = true)
+    val id: Int = 0,
     val uri: String,
     val name: String,
     val duration: Int,

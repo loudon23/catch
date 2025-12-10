@@ -13,7 +13,7 @@ import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
 import com.loudon23.acatch.data.AppDatabase
 import com.loudon23.acatch.data.VideoRepository
-import com.loudon23.acatch.data.dao.FolderWithVideoCount
+import com.loudon23.acatch.data.dao.FolderInfo
 import com.loudon23.acatch.data.item.FolderItem
 import com.loudon23.acatch.data.item.VideoItem
 import com.loudon23.acatch.utils.ThumbnailExtractor
@@ -38,7 +38,7 @@ class VideoViewModel(application: Application) : AndroidViewModel(application) {
     val thumbnails: StateFlow<Map<String, Bitmap>> = _thumbnails
 
     val videoListState: StateFlow<List<VideoItem>>
-    val folderListState: StateFlow<List<FolderWithVideoCount>>
+    val folderListState: StateFlow<List<FolderInfo>>
 
     private val _currentFolderUri: MutableStateFlow<Uri?> = MutableStateFlow(null)
     private val _currentlyPlayingFolderUri: MutableStateFlow<String?> = MutableStateFlow(null)
@@ -151,11 +151,14 @@ class VideoViewModel(application: Application) : AndroidViewModel(application) {
                     val videoList = mutableListOf<VideoItem>()
                     scanDirectory(documentFile, videoList, topLevelFolderUri)
 
-                    val thumbnailUri = videoList.firstOrNull()?.uri
-
-                    repository.insertFolder(FolderItem(uri = topLevelFolderUri, name = folderName, thumbnailVideoUri = thumbnailUri))
+                    repository.insertFolder(FolderItem(uri = topLevelFolderUri, name = folderName, coverVideoId = null))
                     repository.insertVideos(videoList)
                     extractThumbnailsForVideos(videoList)
+
+                    val firstVideo = repository.getFirstVideoInFolder(topLevelFolderUri)
+                    if (firstVideo != null) {
+                        repository.setFolderCoverVideo(topLevelFolderUri, firstVideo.id)
+                    }
                 }
 
                 _currentFolderUri.value = null
@@ -163,10 +166,10 @@ class VideoViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    fun refreshFolder(folderWithVideoCount: FolderWithVideoCount) {
+    fun refreshFolder(folderInfo: FolderInfo) {
         viewModelScope.launch {
-            repository.deleteVideosByFolderUri(folderWithVideoCount.folder.uri)
-            scanVideosFromUri(folderWithVideoCount.folder.uri.toUri())
+            repository.deleteVideosByFolderUri(folderInfo.folder.uri)
+            scanVideosFromUri(folderInfo.folder.uri.toUri())
         }
     }
 
@@ -213,9 +216,9 @@ class VideoViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    fun deleteFolder(folderWithVideoCount: FolderWithVideoCount) {
+    fun deleteFolder(folderInfo: FolderInfo) {
         viewModelScope.launch {
-            repository.deleteFolder(folderWithVideoCount.folder)
+            repository.deleteFolder(folderInfo.folder)
         }
     }
 
@@ -234,9 +237,9 @@ class VideoViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    fun setFolderCover(folderUri: String, videoUri: String) {
+    fun setFolderCover(folderUri: String, videoId: Int) {
         viewModelScope.launch {
-            repository.setFolderThumbnail(folderUri, videoUri)
+            repository.setFolderCoverVideo(folderUri, videoId)
         }
     }
 }

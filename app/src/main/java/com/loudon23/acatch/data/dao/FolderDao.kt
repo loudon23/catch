@@ -11,11 +11,13 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface FolderDao {
     @Query("""
-        SELECT f.*, (SELECT COUNT(*) FROM videos v WHERE v.folderUri = f.uri) as videoCount
+        SELECT f.*, 
+               (SELECT COUNT(*) FROM videos v WHERE v.folderUri = f.uri) as videoCount,
+               (SELECT v.uri FROM videos v WHERE v.id = f.coverVideoId) as coverVideoUri
         FROM folders f
         ORDER BY f.name ASC
     """)
-    fun getFoldersWithVideoCount(): Flow<List<FolderWithVideoCount>>
+    fun getFolderInfo(): Flow<List<FolderInfo>>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertFolder(folder: FolderItem)
@@ -26,6 +28,6 @@ interface FolderDao {
     @Query("DELETE FROM folders")
     suspend fun deleteAllFolders()
 
-    @Query("UPDATE folders SET thumbnailVideoUri = :thumbnailVideoUri WHERE uri = :folderUri")
-    suspend fun setFolderThumbnail(folderUri: String, thumbnailVideoUri: String)
+    @Query("UPDATE folders SET coverVideoId = :coverVideoId WHERE uri = :folderUri")
+    suspend fun setFolderCoverVideo(folderUri: String, coverVideoId: Int)
 }

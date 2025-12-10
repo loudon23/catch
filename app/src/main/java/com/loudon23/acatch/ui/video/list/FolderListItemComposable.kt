@@ -46,18 +46,18 @@ import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.ui.AspectRatioFrameLayout
-import com.loudon23.acatch.data.dao.FolderWithVideoCount
+import com.loudon23.acatch.data.dao.FolderInfo
 import com.loudon23.acatch.ui.common.CommonVideoPlayerView
 
 @OptIn(UnstableApi::class)
 @Composable
 fun FolderListItemComposable(
-    folderWithVideoCount: FolderWithVideoCount,
+    folderInfo: FolderInfo,
     thumbnailBitmap: Bitmap?,
-    onFolderClick: (FolderWithVideoCount) -> Unit,
-    onDeleteFolder: (FolderWithVideoCount) -> Unit,
-    onOpenFolder: (FolderWithVideoCount) -> Unit,
-    onRefreshFolder: (FolderWithVideoCount) -> Unit,
+    onFolderClick: (FolderInfo) -> Unit,
+    onDeleteFolder: (FolderInfo) -> Unit,
+    onOpenFolder: (FolderInfo) -> Unit,
+    onRefreshFolder: (FolderInfo) -> Unit,
     player: ExoPlayer,
     onPlayVideo: (String) -> Unit,
     onStopPlayback: () -> Unit,
@@ -70,11 +70,10 @@ fun FolderListItemComposable(
     val density = LocalDensity.current
     var isVideoRendered by remember { mutableStateOf(false) }
 
-    val folder = folderWithVideoCount.folder
+    val folder = folderInfo.folder
 
-    // This effect handles playing the video and resetting the rendered state
-    LaunchedEffect(isPlaying, folder.thumbnailVideoUri) {
-        val videoUri = folder.thumbnailVideoUri
+    LaunchedEffect(isPlaying, folderInfo.coverVideoUri) {
+        val videoUri = folderInfo.coverVideoUri
         if (isPlaying && videoUri != null) {
             onPlayVideo(videoUri)
         } else {
@@ -82,7 +81,6 @@ fun FolderListItemComposable(
         }
     }
 
-    // This effect listens for the first frame to be rendered to hide the thumbnail
     DisposableEffect(player, isPlaying) {
         val listener = object : Player.Listener {
             override fun onRenderedFirstFrame() {
@@ -102,13 +100,13 @@ fun FolderListItemComposable(
 
     Box(
         modifier = Modifier
-            .aspectRatio(464f / 688f) // Set aspect ratio to 464/688
+            .aspectRatio(464f / 688f) 
             .clip(RoundedCornerShape(8.dp))
             .background(Color.DarkGray)
             .pointerInput(folder) {
                 detectTapGestures(
                     onTap = {
-                        onFolderClick(folderWithVideoCount)
+                        onFolderClick(folderInfo)
                     },
                     onLongPress = { offset ->
                         view.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
@@ -121,19 +119,17 @@ fun FolderListItemComposable(
             },
         contentAlignment = Alignment.Center
     ) {
-        // Layer 1: Video Player (background)
-        if (isPlaying && folder.thumbnailVideoUri != null) {
+        if (isPlaying && folderInfo.coverVideoUri != null) {
             CommonVideoPlayerView(player = player, isPlaying = isPlaying, resizeMode = AspectRatioFrameLayout.RESIZE_MODE_ZOOM)
         }
 
-        // Layer 2: Thumbnail or fallback icon (foreground overlay)
         if (!isVideoRendered) {
             if (thumbnailBitmap != null) {
                 Image(
                     bitmap = thumbnailBitmap.asImageBitmap(),
                     contentDescription = folder.name,
                     modifier = Modifier.fillMaxSize(),
-                    contentScale = ContentScale.Crop // Revert to Crop
+                    contentScale = ContentScale.Crop
                 )
                 Box(
                     modifier = Modifier
@@ -161,7 +157,6 @@ fun FolderListItemComposable(
             }
         }
 
-        // Layer 3: Overlays that should always be on top
         Box(
             modifier = Modifier
                 .fillMaxSize()
@@ -169,7 +164,7 @@ fun FolderListItemComposable(
             contentAlignment = Alignment.BottomEnd
         ) {
             Text(
-                text = folderWithVideoCount.videoCount.toString(),
+                text = folderInfo.videoCount.toString(),
                 color = Color.White,
                 style = MaterialTheme.typography.labelSmall,
                 modifier = Modifier
@@ -186,7 +181,7 @@ fun FolderListItemComposable(
             DropdownMenuItem(
                 text = { Text("Refresh") },
                 onClick = {
-                    onRefreshFolder(folderWithVideoCount)
+                    onRefreshFolder(folderInfo)
                     showContextMenu = false
                 },
                 leadingIcon = {
@@ -199,7 +194,7 @@ fun FolderListItemComposable(
             DropdownMenuItem(
                 text = { Text("Delete") },
                 onClick = {
-                    onDeleteFolder(folderWithVideoCount)
+                    onDeleteFolder(folderInfo)
                     showContextMenu = false
                 },
                 leadingIcon = {
@@ -212,7 +207,7 @@ fun FolderListItemComposable(
             DropdownMenuItem(
                 text = { Text("Open Explorer") },
                 onClick = {
-                    onOpenFolder(folderWithVideoCount)
+                    onOpenFolder(folderInfo)
                     showContextMenu = false
                 },
                 leadingIcon = {
