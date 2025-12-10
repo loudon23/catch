@@ -11,11 +11,15 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.PushPin
 import androidx.compose.material.icons.outlined.FolderOpen
 import androidx.compose.material.icons.outlined.PushPin
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -32,6 +36,13 @@ fun VideoDetailActionButtons(
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
+    val folderList by viewModel.folderListState.collectAsState()
+
+    val isCoverVideo = remember(folderList, videoItem.folderUri, videoItem.id) {
+        val currentFolder = folderList.find { it.folder.uri == videoItem.folderUri }
+        currentFolder?.folder?.coverVideoId == videoItem.id
+    }
+
     Column(
         modifier = modifier
             .navigationBarsPadding()
@@ -43,7 +54,7 @@ fun VideoDetailActionButtons(
             modifier = Modifier.background(Color.Black.copy(alpha = 0.5f), CircleShape)
         ) {
             Icon(
-                imageVector = Icons.Outlined.PushPin,
+                imageVector = if (isCoverVideo) Icons.Filled.PushPin else Icons.Outlined.PushPin,
                 contentDescription = "Set as Cover Video",
                 tint = Color.White
             )
