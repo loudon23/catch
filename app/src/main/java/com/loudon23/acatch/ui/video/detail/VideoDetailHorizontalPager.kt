@@ -32,9 +32,6 @@ import androidx.compose.ui.unit.dp
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
-import androidx.media3.common.MediaItem
-import androidx.media3.common.Player
-import androidx.media3.exoplayer.ExoPlayer
 import com.loudon23.acatch.data.FolderItem
 import com.loudon23.acatch.ui.video.VideoViewModel
 import kotlinx.coroutines.delay
@@ -50,17 +47,11 @@ fun VideoDetailHorizontalPager(
     controlsVisible: Boolean,
     onControlsVisibleChange: (Boolean) -> Unit
 ) {
-    val context = LocalContext.current
     val allVideoItems by videoViewModel.videoListState.collectAsState()
     val thumbnails by videoViewModel.thumbnails.collectAsState()
 
-    var progress by remember { mutableFloatStateOf(0f) }
-
-    val player = remember {
-        ExoPlayer.Builder(context).build().apply {
-            repeatMode = Player.REPEAT_MODE_ONE
-        }
-    }
+    var currentPageIsPlaying by remember { mutableStateOf(false) }
+    var currentVideoPlayerTogglePlay: (() -> Unit)? by remember { mutableStateOf(null) }
 
     val view = LocalView.current
     LaunchedEffect(controlsVisible) {
@@ -75,43 +66,10 @@ fun VideoDetailHorizontalPager(
         }
     }
 
-    LaunchedEffect(player, isCurrentFolderPage) {
-        if (isCurrentFolderPage) {
-            while (true) {
-                progress = if (player.duration > 0) {
-                    player.currentPosition.toFloat() / player.duration.toFloat()
-                } else {
-                    0f
-                }
-                delay(100) // Update progress every 100ms
-            }
-        }
-    }
-
-    var isPlaying by remember { mutableStateOf(player.isPlaying) }
-
-    DisposableEffect(player) {
-        val listener = object : Player.Listener {
-            override fun onIsPlayingChanged(playing: Boolean) {
-                isPlaying = playing
-            }
-        }
-        player.addListener(listener)
-        onDispose {
-            player.removeListener(listener)
-        }
-    }
-
     LaunchedEffect(controlsVisible) {
         if (controlsVisible) {
             delay(3000L)
             onControlsVisibleChange(false)
-        }
-    }
-
-    DisposableEffect(Unit) {
-        onDispose {
-            player.release()
         }
     }
 
@@ -137,19 +95,8 @@ fun VideoDetailHorizontalPager(
     )
 
     LaunchedEffect(horizontalPagerState.settledPage, isCurrentFolderPage) {
-        if (isCurrentFolderPage) {
-            videoItems.getOrNull(horizontalPagerState.settledPage)?.let {
-                val mediaItem = MediaItem.fromUri(it.uri)
-                player.setMediaItem(mediaItem)
-                player.prepare()
-                player.playWhenReady = true
-            } ?: run {
-                player.stop()
-                player.clearMediaItems()
-            }
-        } else {
-            player.pause()
-        }
+        currentPageIsPlaying = false
+        currentVideoPlayerTogglePlay = null
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
@@ -169,9 +116,20 @@ fun VideoDetailHorizontalPager(
                 VideoDetailPlayer(
                     video = videoItem,
                     thumbnailBitmap = thumbnailBitmap,
-                    player = player,
                     isCurrentPage = horizontalPagerState.currentPage == page,
-                    progress = progress
+                    onProgressChange = { newProgress ->
+
+                    },
+                    onIsPlayingChange = { playing ->
+                        if (horizontalPagerState.currentPage == page) {
+                            currentPageIsPlaying = playing
+                        }
+                    },
+                    onPlayerReady = { togglePlayFunction ->
+                        if (horizontalPagerState.currentPage == page) {
+                            currentVideoPlayerTogglePlay = togglePlayFunction
+                        }
+                    }
                 )
             } else {
                 Text("Loading video...", color = Color.White)
@@ -185,8 +143,8 @@ fun VideoDetailHorizontalPager(
         ) {
             Box(modifier = Modifier.fillMaxSize()) {
                 PlayPauseIcon(
-                    isPlaying = isPlaying,
-                    onTogglePlay = { player.playWhenReady = !player.playWhenReady },
+                    isPlaying = currentPageIsPlaying,
+                    onTogglePlay = { currentVideoPlayerTogglePlay?.invoke() },
                     modifier = Modifier.align(Alignment.Center)
                 )
 
