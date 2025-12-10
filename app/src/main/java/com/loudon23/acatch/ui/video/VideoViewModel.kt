@@ -11,8 +11,8 @@ import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
 import com.loudon23.acatch.data.AppDatabase
-import com.loudon23.acatch.data.FolderItem
-import com.loudon23.acatch.data.VideoItem
+import com.loudon23.acatch.data.item.FolderItem
+import com.loudon23.acatch.data.item.VideoItem
 import com.loudon23.acatch.data.VideoRepository
 import com.loudon23.acatch.utils.ThumbnailExtractor
 import kotlinx.coroutines.Dispatchers

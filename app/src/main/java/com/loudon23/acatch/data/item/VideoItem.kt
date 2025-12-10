@@ -1,4 +1,4 @@
-package com.loudon23.acatch.data
+package com.loudon23.acatch.data.item
 
 import androidx.room.Entity
 import androidx.room.ForeignKey
@@ -24,13 +24,4 @@ data class VideoItem(
     val duration: Int,
     val size: Int,
     val folderUri: String // Add this field to link to FolderItem
-)
-
-@Entity(tableName = "folders")
-data class FolderItem(
-    @PrimaryKey
-    val uri: String,
-    val name: String,
-    val videoCount: Int = 0,
-    val thumbnailVideoUri: String? = null // Add this field for the representative video
 )

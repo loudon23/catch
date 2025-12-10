@@ -21,7 +21,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
-import com.loudon23.acatch.data.VideoItem
+import com.loudon23.acatch.data.item.VideoItem
 import com.loudon23.acatch.ui.common.CommonVideoPlayerView
 import kotlinx.coroutines.delay
 

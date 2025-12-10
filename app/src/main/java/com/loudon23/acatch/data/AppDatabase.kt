@@ -4,6 +4,10 @@ import android.content.Context
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
+import com.loudon23.acatch.data.dao.FolderDao
+import com.loudon23.acatch.data.dao.VideoDao
+import com.loudon23.acatch.data.item.FolderItem
+import com.loudon23.acatch.data.item.VideoItem
 
 @Database(entities = [VideoItem::class, FolderItem::class], version = 5, exportSchema = false)
 abstract class AppDatabase : RoomDatabase() {

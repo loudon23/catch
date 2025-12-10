@@ -48,7 +48,7 @@ import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.ui.AspectRatioFrameLayout
-import com.loudon23.acatch.data.FolderItem
+import com.loudon23.acatch.data.item.FolderItem
 import com.loudon23.acatch.ui.common.CommonVideoPlayerView
 
 @OptIn(UnstableApi::class)

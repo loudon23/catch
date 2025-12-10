@@ -1,5 +1,9 @@
 package com.loudon23.acatch.data
 
+import com.loudon23.acatch.data.dao.FolderDao
+import com.loudon23.acatch.data.dao.VideoDao
+import com.loudon23.acatch.data.item.FolderItem
+import com.loudon23.acatch.data.item.VideoItem
 import kotlinx.coroutines.flow.Flow
 
 class VideoRepository(private val videoDao: VideoDao, private val folderDao: FolderDao) {
@@ -27,7 +31,7 @@ class VideoRepository(private val videoDao: VideoDao, private val folderDao: Fol
         folderDao.insertFolder(folder)
     }
 
-    suspend fun deleteFolder(folder: FolderItem) { 
+    suspend fun deleteFolder(folder: FolderItem) {
         folderDao.deleteFolder(folder)
     }
 

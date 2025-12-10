@@ -22,7 +22,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
-import com.loudon23.acatch.data.VideoItem
+import com.loudon23.acatch.data.item.VideoItem
 
 @Composable
 fun VideoDetailActionButtons(

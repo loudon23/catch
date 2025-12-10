@@ -32,7 +32,7 @@ import androidx.compose.ui.unit.dp
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
-import com.loudon23.acatch.data.FolderItem
+import com.loudon23.acatch.data.item.FolderItem
 import com.loudon23.acatch.ui.video.VideoViewModel
 import kotlinx.coroutines.delay
 
