@@ -30,7 +30,6 @@ fun VideoDetailPlayer(
     video: VideoItem,
     thumbnailBitmap: Bitmap?,
     isCurrentPage: Boolean,
-    onProgressChange: (Float) -> Unit,
     onIsPlayingChange: (Boolean) -> Unit,
     onPlayerReady: ((() -> Unit) -> Unit)? = null
 ) {
@@ -82,7 +81,6 @@ fun VideoDetailPlayer(
             progress = 0f
             isPlaying = false
             isVideoRendered = false
-            onProgressChange(0f)
             onIsPlayingChange(false)
         }
     }
@@ -97,7 +95,6 @@ fun VideoDetailPlayer(
                 }
                 if (progress != currentProgress) { // Only update if changed to avoid recomposition
                     progress = currentProgress
-                    onProgressChange(currentProgress) // Notify parent
                 }
                 delay(100) // Update progress every 100ms
             }

@@ -117,9 +117,6 @@ fun VideoDetailHorizontalPager(
                     video = videoItem,
                     thumbnailBitmap = thumbnailBitmap,
                     isCurrentPage = horizontalPagerState.currentPage == page,
-                    onProgressChange = { newProgress ->
-
-                    },
                     onIsPlayingChange = { playing ->
                         if (horizontalPagerState.currentPage == page) {
                             currentPageIsPlaying = playing
