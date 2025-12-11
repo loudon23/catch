@@ -1,6 +1,7 @@
 package com.loudon23.acatch.ui.video
 
 import android.app.Application
+import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
 import android.net.Uri
@@ -48,8 +49,8 @@ class VideoViewModel(application: Application) : AndroidViewModel(application) {
     val videoListState: StateFlow<List<VideoItem>>
     val folderListState: StateFlow<List<FolderInfo>>
 
-    private val _sortOrder = MutableStateFlow(SortOrder.NEWEST_FIRST)
-    val sortOrder: StateFlow<SortOrder> = _sortOrder
+    private val _sortOrder: MutableStateFlow<SortOrder>
+    val sortOrder: StateFlow<SortOrder>
 
     private val _currentFolderUri: MutableStateFlow<Uri?> = MutableStateFlow(null)
     private val _currentlyPlayingFolderUri: MutableStateFlow<String?> = MutableStateFlow(null)
@@ -62,10 +63,15 @@ class VideoViewModel(application: Application) : AndroidViewModel(application) {
     val isLoading: StateFlow<Boolean> = _isLoading
 
     val player: ExoPlayer
+    private val sharedPreferences = application.getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
 
     init {
         val database = AppDatabase.getDatabase(application)
         repository = VideoRepository(database.videoDao(), database.folderDao())
+
+        val savedSortOrder = sharedPreferences.getString("sort_order", SortOrder.NEWEST_FIRST.name) ?: SortOrder.NEWEST_FIRST.name
+        _sortOrder = MutableStateFlow(SortOrder.valueOf(savedSortOrder))
+        sortOrder = _sortOrder
 
         player = ExoPlayer.Builder(application).build().apply {
             repeatMode = Player.REPEAT_MODE_OFF // Set to OFF for sequential playback
@@ -125,6 +131,10 @@ class VideoViewModel(application: Application) : AndroidViewModel(application) {
 
     fun setSortOrder(sortOrder: SortOrder) {
         _sortOrder.value = sortOrder
+        with(sharedPreferences.edit()) {
+            putString("sort_order", sortOrder.name)
+            apply()
+        }
     }
 
     override fun onCleared() {
