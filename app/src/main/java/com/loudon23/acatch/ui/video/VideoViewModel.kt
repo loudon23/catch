@@ -25,11 +25,19 @@ import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+
+enum class SortOrder {
+    NEWEST_FIRST,
+    OLDEST_FIRST,
+    NAME_ASC,
+    NAME_DESC
+}
 
 class VideoViewModel(application: Application) : AndroidViewModel(application) {
 
@@ -39,6 +47,9 @@ class VideoViewModel(application: Application) : AndroidViewModel(application) {
 
     val videoListState: StateFlow<List<VideoItem>>
     val folderListState: StateFlow<List<FolderInfo>>
+
+    private val _sortOrder = MutableStateFlow(SortOrder.NEWEST_FIRST)
+    val sortOrder: StateFlow<SortOrder> = _sortOrder
 
     private val _currentFolderUri: MutableStateFlow<Uri?> = MutableStateFlow(null)
     private val _currentlyPlayingFolderUri: MutableStateFlow<String?> = MutableStateFlow(null)
@@ -69,12 +80,18 @@ class VideoViewModel(application: Application) : AndroidViewModel(application) {
             })
         }
 
-        folderListState = repository.allFolders
-            .stateIn(
-                scope = viewModelScope,
-                started = SharingStarted.WhileSubscribed(5_000),
-                initialValue = emptyList()
-            )
+        folderListState = repository.allFolders.combine(_sortOrder) { folders, sortOrder ->
+            when (sortOrder) {
+                SortOrder.NEWEST_FIRST -> folders.sortedByDescending { it.folder.id }
+                SortOrder.OLDEST_FIRST -> folders.sortedBy { it.folder.id }
+                SortOrder.NAME_ASC -> folders.sortedBy { it.folder.name }
+                SortOrder.NAME_DESC -> folders.sortedByDescending { it.folder.name }
+            }
+        }.stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5_000),
+            initialValue = emptyList()
+        )
 
         videoListState = repository.allVideos.stateIn(
             scope = viewModelScope,
@@ -104,6 +121,10 @@ class VideoViewModel(application: Application) : AndroidViewModel(application) {
                 }
             }
         }
+    }
+
+    fun setSortOrder(sortOrder: SortOrder) {
+        _sortOrder.value = sortOrder
     }
 
     override fun onCleared() {

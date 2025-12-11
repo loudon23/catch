@@ -27,7 +27,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -39,6 +42,7 @@ import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberPermissionState
 import com.loudon23.acatch.ui.video.VideoViewModel
+import com.loudon23.acatch.ui.video.SortOrder
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
@@ -69,12 +73,26 @@ fun FolderListScreen(
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
 
+    var showSortDialog by remember { mutableStateOf(false) }
+    val currentSortOrder by videoViewModel.sortOrder.collectAsState()
+
     val folderInfoList by videoViewModel.folderListState.collectAsState()
     val thumbnails by videoViewModel.thumbnails.collectAsState()
     val isLoading by videoViewModel.isLoading.collectAsState()
     val currentlyPlayingVideoUri by videoViewModel.currentlyPlayingFolderUri.collectAsState()
 
     val lazyGridState = rememberLazyGridState()
+
+    if (showSortDialog) {
+        SortDialog(
+            currentSortOrder = currentSortOrder,
+            onSortOrderChange = { newSortOrder ->
+                videoViewModel.setSortOrder(newSortOrder)
+                showSortDialog = false
+            },
+            onDismiss = { showSortDialog = false }
+        )
+    }
 
     LaunchedEffect(currentlyPlayingVideoUri) {
         currentlyPlayingVideoUri?.let {
@@ -216,7 +234,8 @@ fun FolderListScreen(
         drawerState = drawerState,
         scope = scope,
         directoryPickerLauncher = directoryPickerLauncher,
-        onClearAllData = { videoViewModel.clearAllData() }
+        onClearAllData = { videoViewModel.clearAllData() },
+        onSortMenuClick = { showSortDialog = true }
     ) { 
         Scaffold(
             containerColor = Color.Transparent

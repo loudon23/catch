@@ -15,10 +15,11 @@ import androidx.room.PrimaryKey
             onDelete = ForeignKey.SET_NULL
         )
     ],
-    indices = [Index(value = ["coverVideoId"])]
+    indices = [Index(value = ["uri"], unique = true), Index(value = ["coverVideoId"])]
 )
 data class FolderItem(
-    @PrimaryKey
+    @PrimaryKey(autoGenerate = true)
+    val id: Int = 0,
     val uri: String,
     val name: String,
     val coverVideoId: Int? = null

@@ -9,6 +9,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CreateNewFolder
 import androidx.compose.material.icons.filled.DeleteForever
 import androidx.compose.material.icons.filled.Download
+import androidx.compose.material.icons.filled.Sort
 import androidx.compose.material.icons.filled.Upload
 import androidx.compose.material3.DrawerState
 import androidx.compose.material3.Icon
@@ -30,6 +31,7 @@ fun VideoAppDrawer(
     scope: CoroutineScope,
     directoryPickerLauncher: ActivityResultLauncher<Uri?>,
     onClearAllData: () -> Unit,
+    onSortMenuClick: () -> Unit,
     content: @Composable () -> Unit
 ) {
     val context = LocalContext.current
@@ -48,6 +50,16 @@ fun VideoAppDrawer(
                             scope.launch { drawerState.close() }
                         },
                         icon = { Icon(Icons.Filled.CreateNewFolder, contentDescription = "Add Folder") },
+                        modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
+                    )
+                    NavigationDrawerItem(
+                        label = { Text("Sort") },
+                        selected = false,
+                        onClick = {
+                            onSortMenuClick()
+                            scope.launch { drawerState.close() }
+                        },
+                        icon = { Icon(Icons.Filled.Sort, contentDescription = "Sort") },
                         modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
                     )
                     NavigationDrawerItem(
