@@ -1,6 +1,6 @@
 package com.loudon23.acatch.ui.video.list
 
-import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
+import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.scrollBy
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -21,6 +21,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -83,72 +84,24 @@ private fun ReorderableFolderList(
     modifier: Modifier = Modifier
 ) {
     val scope = rememberCoroutineScope()
-    var dragJob by remember { mutableStateOf<Job?>(null) }
     val listState = rememberLazyListState()
+    var dragJob by remember { mutableStateOf<Job?>(null) }
     var draggedItemIndex by remember { mutableStateOf<Int?>(null) }
     var dragOffset by remember { mutableStateOf(0f) }
 
+    var internalList by remember { mutableStateOf(list) }
+
+    LaunchedEffect(list, draggedItemIndex) {
+        if (draggedItemIndex == null) {
+            internalList = list
+        }
+    }
+
     LazyColumn(
         state = listState,
-        modifier = modifier.pointerInput(Unit) {
-            detectDragGesturesAfterLongPress(
-                onDragStart = { offset ->
-                    listState.layoutInfo.visibleItemsInfo
-                        .firstOrNull { offset.y.toInt() in it.offset..(it.offset + it.size) }
-                        ?.also {
-                            draggedItemIndex = it.index
-                        }
-                },
-                onDragEnd = {
-                    dragJob?.cancel()
-                    draggedItemIndex = null
-                    dragOffset = 0f
-                },
-                onDragCancel = {
-                    dragJob?.cancel()
-                    draggedItemIndex = null
-                    dragOffset = 0f
-                },
-                onDrag = { change, dragAmount ->
-                    change.consume()
-                    dragOffset += dragAmount.y
-
-                    val currentDraggedIndex = draggedItemIndex ?: return@detectDragGesturesAfterLongPress
-                    val draggedItemLayout = listState.layoutInfo.visibleItemsInfo.firstOrNull { it.index == currentDraggedIndex } ?: return@detectDragGesturesAfterLongPress
-
-                    val draggedItemCenter = draggedItemLayout.offset + dragOffset + (draggedItemLayout.size / 2)
-
-                    val targetItem = listState.layoutInfo.visibleItemsInfo.find {
-                        it.index != currentDraggedIndex &&
-                        draggedItemCenter >= it.offset && draggedItemCenter <= (it.offset + it.size)
-                    }
-
-                    if (targetItem != null) {
-                        val fromIndex = currentDraggedIndex
-                        val toIndex = targetItem.index
-
-                        if (fromIndex != toIndex) {
-                            val mutableList = list.toMutableList()
-                            Collections.swap(mutableList, fromIndex, toIndex)
-                            onListChange(mutableList)
-                            
-                            // Compensate for the positional shift to avoid flickering
-                            dragOffset += (draggedItemLayout.offset - targetItem.offset)
-                            
-                            draggedItemIndex = toIndex
-                        }
-                    }
-
-                    if (dragJob?.isActive != true) {
-                        dragJob = scope.launch {
-                            listState.scrollBy(dragAmount.y)
-                        }
-                    }
-                }
-            )
-        }
+        modifier = modifier
     ) {
-        itemsIndexed(list, key = { _, item -> item.folder.uri }) { index, item ->
+        itemsIndexed(internalList, key = { _, item -> item.folder.uri }) { index, item ->
             val isDragging = index == draggedItemIndex
             Card(
                 modifier = Modifier
@@ -164,7 +117,61 @@ private fun ReorderableFolderList(
                     modifier = Modifier.padding(16.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Icon(Icons.Default.DragHandle, contentDescription = "Drag Handle")
+                    Icon(
+                        imageVector = Icons.Default.DragHandle,
+                        contentDescription = "Drag Handle",
+                        modifier = Modifier.pointerInput(Unit) {
+                            detectDragGestures(
+                                onDragStart = {
+                                    draggedItemIndex = index
+                                },
+                                onDragEnd = {
+                                    draggedItemIndex = null
+                                    dragOffset = 0f
+                                    onListChange(internalList) 
+                                },
+                                onDragCancel = {
+                                    draggedItemIndex = null
+                                    dragOffset = 0f
+                                },
+                                onDrag = { change, dragAmount ->
+                                    change.consume()
+                                    dragOffset += dragAmount.y
+
+                                    val currentDraggedIndex = draggedItemIndex ?: return@detectDragGestures
+                                    val draggedItemLayout = listState.layoutInfo.visibleItemsInfo.firstOrNull { it.index == currentDraggedIndex } ?: return@detectDragGestures
+
+                                    val draggedItemCenter = draggedItemLayout.offset + dragOffset + (draggedItemLayout.size / 2)
+
+                                    val targetItem = listState.layoutInfo.visibleItemsInfo.find {
+                                        it.index != currentDraggedIndex &&
+                                        draggedItemCenter >= it.offset && draggedItemCenter <= (it.offset + it.size)
+                                    }
+
+                                    if (targetItem != null) {
+                                        val fromIndex = currentDraggedIndex
+                                        val toIndex = targetItem.index
+
+                                        if (fromIndex != toIndex) {
+                                            val mutableList = internalList.toMutableList()
+                                            Collections.swap(mutableList, fromIndex, toIndex)
+                                            internalList = mutableList
+                                            onListChange(internalList)
+
+                                            dragOffset += (draggedItemLayout.offset - targetItem.offset)
+                                            draggedItemIndex = toIndex
+                                        }
+                                    }
+
+                                    if (dragJob?.isActive != true) {
+                                        dragJob = scope.launch {
+                                            listState.scrollBy(dragAmount.y)
+                                        }
+                                    }
+                                }
+                            )
+                        }
+                    )
                     Text(item.folder.name, modifier = Modifier.weight(1f).padding(start = 16.dp))
                 }
             }
