@@ -5,7 +5,11 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.selection.selectable
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.List
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -18,7 +22,8 @@ import androidx.compose.ui.unit.dp
 fun SortDialog(
     currentSortOrder: SortOption,
     onSortOrderChange: (SortOption) -> Unit,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    onReorderClick: () -> Unit
 ) {
     val sortOptions = listOf(
         SortOption.LATEST,
@@ -56,8 +61,16 @@ fun SortDialog(
                                 SortOption.NAME_ZA -> "Name (Z-A)"
                                 SortOption.ORDER -> "Custom"
                             },
-                            modifier = Modifier.padding(start = 16.dp)
+                            modifier = Modifier.padding(start = 16.dp).weight(1f)
                         )
+                        if (sortOrder == SortOption.ORDER) {
+                            IconButton(onClick = onReorderClick) {
+                                Icon(
+                                    imageVector = Icons.Filled.List,
+                                    contentDescription = "Reorder"
+                                )
+                            }
+                        }
                     }
                 }
             }

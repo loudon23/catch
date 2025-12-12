@@ -25,6 +25,7 @@ import com.loudon23.acatch.ui.theme.CatchTheme
 import com.loudon23.acatch.ui.video.detail.VideoDetailScreen
 import com.loudon23.acatch.ui.video.list.FolderListScreen
 import com.loudon23.acatch.ui.video.VideoViewModel
+import com.loudon23.acatch.ui.video.list.ReorderableFolderListScreen
 import java.util.concurrent.Executors
 import androidx.compose.runtime.*
 
@@ -32,6 +33,7 @@ import androidx.compose.runtime.*
 object NavRoutes {
     const val VIDEO_LIST = "video_list"
     const val VIDEO_DETAIL = "video_detail"
+    const val REORDER_FOLDER_LIST = "reorder_folder_list"
     const val FOLDER_URI_KEY = "folderUri"
     const val VIDEO_URI_KEY = "videoUri"
     const val VIDEO_INDEX_KEY = "videoIndex" // 새로운 인덱스 키 추가
@@ -78,6 +80,9 @@ class MainActivity : AppCompatActivity() {
                                         // videoIndex를 쿼리 파라미터로 전달
                                         Log.d("MainActivity", "${NavRoutes.VIDEO_DETAIL}/$encodedFolderUri/$encodedVideoUri?${NavRoutes.VIDEO_INDEX_KEY}=$videoIndex")
                                         navController.navigate("${NavRoutes.VIDEO_DETAIL}/$encodedFolderUri/$encodedVideoUri?${NavRoutes.VIDEO_INDEX_KEY}=$videoIndex")
+                                    },
+                                    onNavigateToReorder = {
+                                        navController.navigate(NavRoutes.REORDER_FOLDER_LIST)
                                     }
                                 )
                             }
@@ -98,6 +103,12 @@ class MainActivity : AppCompatActivity() {
                                     videoUri = videoUri,
                                     videoIndex = videoIndex, // videoIndex 전달
                                     videoViewModel = videoViewModel,
+                                )
+                            }
+                            composable(NavRoutes.REORDER_FOLDER_LIST) {
+                                ReorderableFolderListScreen(
+                                    videoViewModel = videoViewModel,
+                                    onNavigateUp = { navController.navigateUp() }
                                 )
                             }
                         }

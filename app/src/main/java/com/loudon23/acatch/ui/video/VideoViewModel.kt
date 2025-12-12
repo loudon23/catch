@@ -264,4 +264,13 @@ class VideoViewModel(application: Application) : AndroidViewModel(application) {
             repository.setFolderCoverVideo(folderUri, videoId)
         }
     }
+
+    fun updateFolderOrder(folderInfoList: List<FolderInfo>) {
+        viewModelScope.launch {
+            val updatedFolders = folderInfoList.mapIndexed { index, folderInfo ->
+                folderInfo.folder.copy(orderNum = index)
+            }
+            repository.updateFolders(updatedFolders)
+        }
+    }
 }

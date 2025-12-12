@@ -5,6 +5,7 @@ import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.Update
 import com.loudon23.acatch.data.item.FolderItem
 import com.loudon23.acatch.ui.video.list.SortOption
 import kotlinx.coroutines.flow.Flow
@@ -42,6 +43,9 @@ interface FolderDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertFolder(folder: FolderItem)
+
+    @Update
+    suspend fun updateFolders(folders: List<FolderItem>)
 
     @Delete
     suspend fun deleteFolder(folder: FolderItem)

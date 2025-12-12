@@ -37,6 +37,10 @@ class VideoRepository(private val videoDao: VideoDao, private val folderDao: Fol
         folderDao.insertFolder(folder)
     }
 
+    suspend fun updateFolders(folders: List<FolderItem>) {
+        folderDao.updateFolders(folders)
+    }
+
     suspend fun deleteFolder(folder: FolderItem) {
         folderDao.deleteFolder(folder)
     }
