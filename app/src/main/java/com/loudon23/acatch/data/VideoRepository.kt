@@ -5,12 +5,13 @@ import com.loudon23.acatch.data.dao.FolderInfo
 import com.loudon23.acatch.data.dao.VideoDao
 import com.loudon23.acatch.data.item.FolderItem
 import com.loudon23.acatch.data.item.VideoItem
+import com.loudon23.acatch.ui.video.list.SortOption
 import kotlinx.coroutines.flow.Flow
 
 class VideoRepository(private val videoDao: VideoDao, private val folderDao: FolderDao) {
 
     val allVideos: Flow<List<VideoItem>> = videoDao.getVideos()
-    val allFolders: Flow<List<FolderInfo>> = folderDao.getFolderInfo()
+    fun allFolders(sortOption: SortOption): Flow<List<FolderInfo>> = folderDao.getFolderInfo(sortOption.name)
 
     suspend fun getFirstVideoInFolder(folderUri: String): VideoItem? {
         return videoDao.getFirstVideoInFolder(folderUri)

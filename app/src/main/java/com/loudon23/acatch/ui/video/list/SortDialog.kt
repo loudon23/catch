@@ -13,19 +13,18 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.loudon23.acatch.ui.video.SortOrder
 
 @Composable
 fun SortDialog(
-    currentSortOrder: SortOrder,
-    onSortOrderChange: (SortOrder) -> Unit,
+    currentSortOrder: SortOption,
+    onSortOrderChange: (SortOption) -> Unit,
     onDismiss: () -> Unit
 ) {
     val sortOptions = listOf(
-        SortOrder.NEWEST_FIRST,
-        SortOrder.OLDEST_FIRST,
-        SortOrder.NAME_ASC,
-        SortOrder.NAME_DESC
+        SortOption.LATEST,
+        SortOption.OLDEST,
+        SortOption.NAME_AZ,
+        SortOption.NAME_ZA
     )
 
     AlertDialog(
@@ -50,10 +49,10 @@ fun SortDialog(
                         )
                         Text(
                             text = when (sortOrder) {
-                                SortOrder.NEWEST_FIRST -> "Newest first"
-                                SortOrder.OLDEST_FIRST -> "Oldest first"
-                                SortOrder.NAME_ASC -> "Name (A-Z)"
-                                SortOrder.NAME_DESC -> "Name (Z-A)"
+                                SortOption.LATEST -> "Newest first"
+                                SortOption.OLDEST -> "Oldest first"
+                                SortOption.NAME_AZ -> "Name (A-Z)"
+                                SortOption.NAME_ZA -> "Name (Z-A)"
                             },
                             modifier = Modifier.padding(start = 16.dp)
                         )

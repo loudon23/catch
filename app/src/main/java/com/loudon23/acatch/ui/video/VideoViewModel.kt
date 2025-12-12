@@ -17,8 +17,10 @@ import com.loudon23.acatch.data.VideoRepository
 import com.loudon23.acatch.data.dao.FolderInfo
 import com.loudon23.acatch.data.item.FolderItem
 import com.loudon23.acatch.data.item.VideoItem
+import com.loudon23.acatch.ui.video.list.SortOption
 import com.loudon23.acatch.utils.ThumbnailExtractor
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -26,20 +28,14 @@ import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-enum class SortOrder {
-    NEWEST_FIRST,
-    OLDEST_FIRST,
-    NAME_ASC,
-    NAME_DESC
-}
-
+@OptIn(ExperimentalCoroutinesApi::class)
 class VideoViewModel(application: Application) : AndroidViewModel(application) {
 
     private val repository: VideoRepository
@@ -49,8 +45,8 @@ class VideoViewModel(application: Application) : AndroidViewModel(application) {
     val videoListState: StateFlow<List<VideoItem>>
     val folderListState: StateFlow<List<FolderInfo>>
 
-    private val _sortOrder: MutableStateFlow<SortOrder>
-    val sortOrder: StateFlow<SortOrder>
+    private val _sortOrder: MutableStateFlow<SortOption>
+    val sortOrder: StateFlow<SortOption>
 
     private val _currentFolderUri: MutableStateFlow<Uri?> = MutableStateFlow(null)
     private val _currentlyPlayingFolderUri: MutableStateFlow<String?> = MutableStateFlow(null)
@@ -69,8 +65,8 @@ class VideoViewModel(application: Application) : AndroidViewModel(application) {
         val database = AppDatabase.getDatabase(application)
         repository = VideoRepository(database.videoDao(), database.folderDao())
 
-        val savedSortOrder = sharedPreferences.getString("sort_order", SortOrder.NEWEST_FIRST.name) ?: SortOrder.NEWEST_FIRST.name
-        _sortOrder = MutableStateFlow(SortOrder.valueOf(savedSortOrder))
+        val savedSortOrder = sharedPreferences.getString("sort_order", SortOption.LATEST.name) ?: SortOption.LATEST.name
+        _sortOrder = MutableStateFlow(SortOption.valueOf(savedSortOrder))
         sortOrder = _sortOrder
 
         player = ExoPlayer.Builder(application).build().apply {
@@ -86,13 +82,8 @@ class VideoViewModel(application: Application) : AndroidViewModel(application) {
             })
         }
 
-        folderListState = repository.allFolders.combine(_sortOrder) { folders, sortOrder ->
-            when (sortOrder) {
-                SortOrder.NEWEST_FIRST -> folders.sortedByDescending { it.folder.id }
-                SortOrder.OLDEST_FIRST -> folders.sortedBy { it.folder.id }
-                SortOrder.NAME_ASC -> folders.sortedBy { it.folder.name }
-                SortOrder.NAME_DESC -> folders.sortedByDescending { it.folder.name }
-            }
+        folderListState = _sortOrder.flatMapLatest { sortOrder ->
+            repository.allFolders(sortOrder)
         }.stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5_000),
@@ -129,7 +120,7 @@ class VideoViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    fun setSortOrder(sortOrder: SortOrder) {
+    fun setSortOrder(sortOrder: SortOption) {
         _sortOrder.value = sortOrder
         with(sharedPreferences.edit()) {
             putString("sort_order", sortOrder.name)
