@@ -24,7 +24,8 @@ fun SortDialog(
         SortOption.LATEST,
         SortOption.OLDEST,
         SortOption.NAME_AZ,
-        SortOption.NAME_ZA
+        SortOption.NAME_ZA,
+        SortOption.ORDER,
     )
 
     AlertDialog(
@@ -53,6 +54,7 @@ fun SortDialog(
                                 SortOption.OLDEST -> "Oldest first"
                                 SortOption.NAME_AZ -> "Name (A-Z)"
                                 SortOption.NAME_ZA -> "Name (Z-A)"
+                                SortOption.ORDER -> "Custom"
                             },
                             modifier = Modifier.padding(start = 16.dp)
                         )

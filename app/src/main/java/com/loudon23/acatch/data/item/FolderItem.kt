@@ -22,5 +22,6 @@ data class FolderItem(
     val id: Int = 0,
     val uri: String,
     val name: String,
-    val coverVideoId: Int? = null
+    val coverVideoId: Int? = null,
+    val orderNum: Int = 0
 )

@@ -32,7 +32,11 @@ interface FolderDao {
             CASE :sortOption
                 WHEN 'NAME_ZA' THEN f.name
                 ELSE NULL
-            END DESC
+            END DESC,
+            CASE :sortOption
+                WHEN 'ORDER' THEN f.orderNum
+                ELSE NULL
+            END ASC
     """)
     fun getFolderInfo(sortOption: String): Flow<List<FolderInfo>>
 

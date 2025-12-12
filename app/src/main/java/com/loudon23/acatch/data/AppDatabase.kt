@@ -9,7 +9,7 @@ import com.loudon23.acatch.data.dao.VideoDao
 import com.loudon23.acatch.data.item.FolderItem
 import com.loudon23.acatch.data.item.VideoItem
 
-@Database(entities = [VideoItem::class, FolderItem::class], version = 6, exportSchema = false)
+@Database(entities = [VideoItem::class, FolderItem::class], version = 7, exportSchema = false)
 abstract class AppDatabase : RoomDatabase() {
 
     abstract fun videoDao(): VideoDao
